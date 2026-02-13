@@ -1,0 +1,20 @@
+{
+    "version": "1.0.1",
+    "build": "20251212",
+    "name": "Update Dec 12, 2025",
+    "releaseDate": "2025-12-12",
+    "minSupportedVersion": "1.0.0",
+    "changelog": [
+        {
+            "version": "1.0.1",
+            "date": "2025-12-12",
+            "features": [
+                "Bug fixes and improvements"
+            ],
+            "fixes": [],
+            "improvements": []
+        }
+    ],
+    "forceUpdate": false,
+    "forceUpdateMessage": null
+}

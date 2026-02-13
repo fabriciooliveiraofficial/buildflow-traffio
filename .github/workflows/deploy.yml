@@ -1,0 +1,33 @@
+name: Deploy to Hostinger (SSH)
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH/Rsync
+        uses: easingthemes/ssh-deploy@v5.0.3
+        with:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+          REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          TARGET: public_html/
+          EXCLUDE: |
+            **/.git*
+            **/.git*/**
+            **/mysql-data/**
+            **/legacy/**
+            **/_public_html/**
+            **/Dockerfile
+            **/docker-compose.yml
+            **/.agent/**
+            **/docs/**
+            README.md
+            .env

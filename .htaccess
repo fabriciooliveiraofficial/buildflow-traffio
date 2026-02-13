@@ -1,0 +1,53 @@
+# Disable ModSecurity for local development
+<IfModule mod_security.c>
+    SecFilterEngine Off
+    SecFilterScanPOST Off
+</IfModule>
+
+RewriteEngine On
+
+# HTTPS redirect is DISABLED until wildcard SSL is configured
+# Uncomment these lines after setting up SSL for *.buildflow-traffio.com
+# RewriteCond %{HTTPS} off
+# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Remove trailing slashes
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)/$ /$1 [L,R=301]
+
+# Pass Authorization header to PHP (required for JWT on shared hosting)
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# Route all requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Prevent access to sensitive files (but allow PWA files)
+<FilesMatch "\.(env|lock|gitignore|gitattributes)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block sensitive JSON files but allow manifest.json
+<FilesMatch "(composer|package|package-lock)\.json$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Block markdown files except README
+<FilesMatch "\.md$">
+    <If "!%{REQUEST_URI} =~ m#/README\.md$#">
+        Order allow,deny
+        Deny from all
+    </If>
+</FilesMatch>

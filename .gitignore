@@ -1,0 +1,25 @@
+# Local Environment
+mysql-data/
+.env
+legacy/
+_public_html/
+*.log
+
+# Dependencies
+vendor/
+node_modules/
+
+# OS specific
+.DS_Store
+Thumbs.db
+
+# Agent/Temp
+.agent/logs/
+.agent/temp/
+.gemini/
+.idea/
+.vscode/
+
+# Project specific backups
+*.zip
+*.bak

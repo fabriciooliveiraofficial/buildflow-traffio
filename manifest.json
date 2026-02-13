@@ -1,0 +1,59 @@
+{
+    "name": "BuildFlow ERP",
+    "short_name": "BuildFlow",
+    "description": "Construction project management and ERP platform",
+    "start_url": "/?source=pwa",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#2196f3",
+    "background_color": "#ffffff",
+    "icons": [
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%232196f3' width='512' height='512' rx='76'/><text x='256' y='340' text-anchor='middle' fill='white' font-size='280' font-weight='bold' font-family='Arial'>B</text></svg>",
+            "sizes": "512x512",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect fill='%232196f3' width='192' height='192' rx='28'/><text x='96' y='128' text-anchor='middle' fill='white' font-size='105' font-weight='bold' font-family='Arial'>B</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "Dashboard",
+            "short_name": "Dashboard",
+            "description": "View your dashboard",
+            "url": "/dashboard?source=pwa-shortcut"
+        },
+        {
+            "name": "New Project",
+            "short_name": "New Project",
+            "description": "Create a new project",
+            "url": "/projects?action=new&source=pwa-shortcut"
+        },
+        {
+            "name": "Time Clock",
+            "short_name": "Clock In",
+            "description": "Start time tracking",
+            "url": "/time-clock?source=pwa-shortcut"
+        },
+        {
+            "name": "Expenses",
+            "short_name": "Expenses",
+            "description": "Log an expense",
+            "url": "/expenses?source=pwa-shortcut"
+        }
+    ],
+    "categories": [
+        "business",
+        "productivity",
+        "finance"
+    ],
+    "lang": "en-US",
+    "dir": "ltr",
+    "prefer_related_applications": false
+}

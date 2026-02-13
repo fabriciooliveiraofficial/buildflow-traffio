@@ -1,0 +1,9 @@
+# Simple .htaccess for Hostinger
+# If you get 403 errors, try this minimal version first
+
+RewriteEngine On
+
+# Route all requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^ index.php [L]
