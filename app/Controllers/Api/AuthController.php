@@ -180,6 +180,26 @@ class AuthController extends Controller
     }
 
     /**
+     * Check current session status
+     */
+    public function session(): array
+    {
+        $user = $_SESSION['user'] ?? null;
+        
+        if (!$user) {
+            return $this->success(['authenticated' => false], 'Not authenticated');
+        }
+
+        $employeeId = $this->getEmployeeId();
+        
+        return $this->success([
+            'authenticated' => true,
+            'user' => $this->sanitizeUser($user),
+            'employee_id' => $employeeId
+        ], 'Authenticated');
+    }
+
+    /**
      * Get current user profile
      */
     public function me(): array
@@ -190,18 +210,22 @@ class AuthController extends Controller
             $this->error('Not authenticated', 401);
         }
 
-        unset($user['password']);
-        unset($user['two_factor_secret']);
-
         // Get tenant info
         $tenant = $this->db->fetch(
             "SELECT id, name, subdomain, logo FROM tenants WHERE id = ?",
             [$user['tenant_id']]
         );
 
+        $employeeId = $this->getEmployeeId();
+        $employee = null;
+        if ($employeeId) {
+            $employee = $this->db->fetch("SELECT * FROM employees WHERE id = ?", [$employeeId]);
+        }
+
         return $this->success([
-            'user' => $user,
+            'user' => $this->sanitizeUser($user),
             'tenant' => $tenant,
+            'employee' => $employee
         ]);
     }
 
@@ -307,5 +331,92 @@ class AuthController extends Controller
         $issuer = urlencode(APP_NAME);
         $label = urlencode($email);
         return "otpauth://totp/{$issuer}:{$label}?secret={$secret}&issuer={$issuer}";
+    }
+
+    /**
+     * Setup Employee Account (First time login)
+     */
+    public function setupEmployee(): array
+    {
+        $data = $this->validate([
+            'email' => 'required|email',
+            'password' => 'required|min:6',
+            'subdomain' => 'required',
+        ]);
+
+        // Find tenant
+        $tenant = $this->db->fetch(
+            "SELECT id FROM tenants WHERE subdomain = ? AND status = 'active'",
+            [$data['subdomain']]
+        );
+
+        if (!$tenant) {
+            $this->error('Organization not found', 404);
+        }
+
+        // Find employee
+        $employee = $this->db->fetch(
+            "SELECT id, user_id, first_name, last_name FROM employees WHERE email = ? AND tenant_id = ?",
+            [$data['email'], $tenant['id']]
+        );
+
+        if (!$employee) {
+            $this->error('Employee record not found', 404);
+        }
+
+        if ($employee['user_id']) {
+            $this->error('Account already set up. Please login.', 409);
+        }
+
+        // Get Worker Role
+        $role = $this->db->fetch(
+            "SELECT id FROM roles WHERE name = 'worker' AND tenant_id IS NULL"
+        );
+        
+        if (!$role) {
+            // Fallback or create error
+            $this->error('System configuration error: Worker role missing', 500);
+        }
+
+        try {
+            $this->db->beginTransaction();
+
+            // Create User
+            $userId = $this->db->insert('users', [
+                'tenant_id' => $tenant['id'],
+                'role_id' => $role['id'],
+                'first_name' => $employee['first_name'],
+                'last_name' => $employee['last_name'],
+                'email' => $data['email'],
+                'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                'status' => 'active'
+            ]);
+
+            // Link to Employee
+            $this->db->update('employees', [
+                'user_id' => $userId
+            ], ['id' => $employee['id']]);
+
+            $this->db->commit();
+
+            // Auto-login (generate token)
+            $token = $this->auth->generateToken([
+                'id' => $userId,
+                'email' => $data['email'],
+                'tenant_id' => $tenant['id'],
+                'role_id' => $role['id'],
+                'role_name' => 'worker', // Assuming standard role, permissions handled by middleware
+                'permissions' => '["tasks.view", "time_logs.own"]' // Default worker perms if not loaded from DB
+            ]);
+
+            return $this->success([
+                'token' => $token,
+                'user_id' => $userId
+            ], 'Account setup successful', 201);
+
+        } catch (\Exception $e) {
+            $this->db->rollback();
+            throw $e;
+        }
     }
 }

@@ -105,10 +105,12 @@ $router->group(['prefix' => 'api'], function ($router) {
 
     // Authentication
     $router->post('/auth/login', 'Api\\AuthController@login');
+    $router->get('/auth/session', 'Api\\AuthController@session');
     $router->post('/auth/register', 'Api\\AuthController@register');
     $router->post('/auth/forgot-password', 'Api\\AuthController@forgotPassword');
     $router->post('/auth/reset-password', 'Api\\AuthController@resetPassword');
     $router->post('/auth/verify-2fa', 'Api\\AuthController@verify2FA');
+    $router->post('/auth/setup-employee', 'Api\\AuthController@setupEmployee');
 
     // Stripe Webhook (public but verified by signature)
     $router->post('/webhooks/stripe', 'Api\\WebhookController@stripe');
@@ -231,11 +233,18 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
     // Employees
     $router->get('/employees', 'Api\\EmployeeController@index');
     $router->post('/employees', 'Api\\EmployeeController@store');
+    $router->get('/employees/my-payroll', 'Api\\EmployeeController@myPayroll');
+    $router->get('/employees/my-jobs', 'Api\\EmployeeController@myJobs');
+    $router->post('/employees/jobs/{id}/status', 'Api\\EmployeeController@updateJobStatus');
     $router->get('/employees/{id}', 'Api\\EmployeeController@show');
     $router->put('/employees/{id}', 'Api\\EmployeeController@update');
     $router->delete('/employees/{id}', 'Api\\EmployeeController@destroy');
     $router->get('/employees/{id}/time-logs', 'Api\\EmployeeController@timeLogs');
     $router->get('/employees/{id}/payroll', 'Api\\EmployeeController@payroll');
+
+    // Push Notifications
+    $router->post('/push/subscribe', 'Api\\PushSubscriptionController@store');
+    $router->delete('/push/unsubscribe', 'Api\\PushSubscriptionController@destroy');
 
     // Payroll
     $router->get('/payroll/periods', 'Api\\PayrollController@periods');
@@ -510,9 +519,11 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
 
 });
 
-// =====================================================
 // Public API Routes (No Authentication Required)
 // =====================================================
+
+// Tenant Discovery (Slack-style login)
+$router->get('/api/tenants/discover', 'Api\\TenantDiscoveryController@discover');
 
 // Subscription Plans & Checkout (public - for new signups)
 $router->get('/api/plans', 'Api\\SubscriptionController@plans');

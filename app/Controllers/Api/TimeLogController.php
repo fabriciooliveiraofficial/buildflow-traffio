@@ -249,12 +249,14 @@ class TimeLogController extends Controller
     public function startTimer(): array
     {
         $input = $this->getJsonInput();
-
         $employeeId = $input['employee_id'] ?? null;
+        $lat = $input['latitude'] ?? null;
+        $lng = $input['longitude'] ?? null;
 
         if (!$employeeId) {
-            // Try to get employee from current user
-            $user = $_SESSION['user'];
+            $user = $_SESSION['user'] ?? null;
+            if (!$user) $this->error('Authentication required', 401);
+            
             $employee = $this->db->fetch(
                 "SELECT id FROM employees WHERE user_id = ? AND tenant_id = ?",
                 [$user['id'], $this->db->getTenantId()]
@@ -263,12 +265,26 @@ class TimeLogController extends Controller
         }
 
         if (!$employeeId) {
-            $this->error('Employee ID required', 422);
+            $this->error('Employee identification failed', 422);
+        }
+
+        // Project and Geofencing check
+        $projectId = $input['project_id'] ?? null;
+        if ($projectId && $lat && $lng) {
+            $project = $this->db->fetch("SELECT latitude, longitude, geofence_radius FROM projects WHERE id = ?", [$projectId]);
+            if ($project && $project['latitude'] && $project['longitude']) {
+                $isWithin = \App\Services\GeofenceService::isWithinRadius(
+                    $lat, $lng, $project['latitude'], $project['longitude'], $project['geofence_radius'] ?? 200
+                );
+                if (!$isWithin) {
+                    $this->error('Check-in failed: You are outside the authorized work site area.', 403);
+                }
+            }
         }
 
         // Check for existing running timer
         $existing = $this->db->fetch(
-            "SELECT * FROM time_logs 
+            "SELECT id FROM time_logs 
              WHERE employee_id = ? AND tenant_id = ? AND end_time IS NULL",
             [$employeeId, $this->db->getTenantId()]
         );
@@ -278,18 +294,21 @@ class TimeLogController extends Controller
         }
 
         $logId = $this->db->insert('time_logs', [
+            'tenant_id' => $this->db->getTenantId(),
             'employee_id' => $employeeId,
-            'project_id' => $input['project_id'] ?? null,
+            'project_id' => $projectId,
             'task_id' => $input['task_id'] ?? null,
             'log_date' => date('Y-m-d'),
             'start_time' => date('H:i:s'),
+            'start_lat' => $lat,
+            'start_lng' => $lng,
             'hours' => 0,
             'description' => $input['description'] ?? null,
             'billable' => $input['billable'] ?? true,
+            'is_verified' => ($lat && $lng) ? true : false
         ]);
 
         $log = $this->db->fetch("SELECT * FROM time_logs WHERE id = ?", [$logId]);
-
         return $this->success($log, 'Timer started');
     }
 
@@ -300,9 +319,11 @@ class TimeLogController extends Controller
     {
         $input = $this->getJsonInput();
         $employeeId = $input['employee_id'] ?? null;
+        $lat = $input['latitude'] ?? null;
+        $lng = $input['longitude'] ?? null;
 
         if (!$employeeId) {
-            $user = $_SESSION['user'];
+            $user = $_SESSION['user'] ?? null;
             $employee = $this->db->fetch(
                 "SELECT id FROM employees WHERE user_id = ? AND tenant_id = ?",
                 [$user['id'], $this->db->getTenantId()]
@@ -321,18 +342,19 @@ class TimeLogController extends Controller
         }
 
         $endTime = date('H:i:s');
-        $startTime = strtotime($log['start_time']);
-        $end = strtotime($endTime);
-        $hours = ($end - $startTime) / 3600;
+        $startSeconds = strtotime($log['start_time']);
+        $endSeconds = strtotime($endTime);
+        $hours = ($endSeconds - $startSeconds) / 3600;
 
         $this->db->update('time_logs', [
             'end_time' => $endTime,
+            'end_lat' => $lat,
+            'end_lng' => $lng,
             'hours' => round($hours, 2),
             'updated_at' => date('Y-m-d H:i:s'),
         ], ['id' => $log['id']]);
 
         $updated = $this->db->fetch("SELECT * FROM time_logs WHERE id = ?", [$log['id']]);
-
         return $this->success($updated, 'Timer stopped');
     }
 

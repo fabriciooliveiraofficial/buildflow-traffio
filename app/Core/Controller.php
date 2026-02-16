@@ -147,6 +147,22 @@ abstract class Controller
     }
 
     /**
+     * Get employee record for current user
+     */
+    protected function getEmployeeId(): ?int
+    {
+        $user = $this->getUser();
+        if (!$user) return null;
+
+        $employee = $this->db->fetch(
+            "SELECT id FROM employees WHERE user_id = ? AND tenant_id = ?",
+            [$user['id'], $this->db->getTenantId()]
+        );
+
+        return $employee['id'] ?? null;
+    }
+
+    /**
      * Set authenticated user (called by auth middleware)
      */
     public function setUser(array $user): void

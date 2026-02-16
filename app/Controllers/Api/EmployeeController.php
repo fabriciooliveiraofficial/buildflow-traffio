@@ -257,4 +257,101 @@ class EmployeeController extends Controller
 
         return $this->success(null, 'Employee terminated');
     }
+    /**
+     * Get payroll records for current logged-in employee
+     */
+    public function myPayroll(): array
+    {
+        $employeeId = $this->getEmployeeId();
+        if (!$employeeId) $this->error('Employee record not found', 404);
+
+        $employee = $this->db->fetch("SELECT * FROM employees WHERE id = ?", [$employeeId]);
+
+        $records = $this->db->fetchAll(
+            "SELECT * FROM payroll_records 
+             WHERE employee_id = ? 
+             ORDER BY period_end DESC",
+            [$employeeId]
+        );
+
+        return $this->success([
+            'employee' => [
+                'payment_type' => $employee['payment_type'],
+                'hourly_rate' => $employee['hourly_rate'],
+                'daily_rate' => $employee['daily_rate'],
+                'salary' => $employee['salary'],
+                'commission_rate' => $employee['commission_rate']
+            ],
+            'records' => $records
+        ]);
+    }
+
+    /**
+     * Get assigned jobs/tasks for the current employee
+     */
+    public function myJobs(): array
+    {
+        $employeeId = $this->getEmployeeId();
+        if (!$employeeId) $this->error('Employee record not found', 404);
+
+        $params = $this->getQueryParams();
+        $status = $params['status'] ?? null;
+        
+        $query = "SELECT t.*, p.name as project_name, p.latitude, p.longitude, p.geofence_radius
+                  FROM tasks t
+                  JOIN projects p ON t.project_id = p.id
+                  WHERE (t.assigned_to = ? OR t.id IN (SELECT task_id FROM task_assignments WHERE employee_id = ?))";
+        
+        $bindings = [$employeeId, $employeeId];
+        
+        if ($status) {
+            $query .= " AND t.status = ?";
+            $bindings[] = $status;
+        }
+
+        $jobs = $this->db->fetchAll($query, $bindings);
+
+        return $this->success($jobs);
+    }
+
+    /**
+     * Accept, Reject or Update progress on a job
+     */
+    public function updateJobStatus(string $taskId): array
+    {
+        $input = $this->getJsonInput();
+        $status = $input['status'] ?? null; // accepted, rejected, in_progress, completed
+        $notes = $input['notes'] ?? null;
+
+        if (!$status) $this->error('Status required', 422);
+
+        $employeeId = $this->getEmployeeId();
+        if (!$employeeId) $this->error('Employee identification failed', 403);
+
+        // Verify assignment
+        $assigned = $this->db->fetch(
+            "SELECT id FROM tasks WHERE id = ? AND (assigned_to = ? OR id IN (SELECT task_id FROM task_assignments WHERE employee_id = ?))",
+            [$taskId, $employeeId, $employeeId]
+        );
+
+        if (!$assigned) $this->error('Task not assigned to you', 403);
+
+        $this->db->update('tasks', [
+            'status' => $status,
+            'updated_at' => date('Y-m-d H:i:s')
+        ], ['id' => $taskId]);
+
+        // Log progress if provided
+        if (isset($input['percentage'])) {
+            $this->db->insert('task_progress', [
+                'task_id' => $taskId,
+                'employee_id' => $employeeId,
+                'stage_name' => $status,
+                'percentage' => $input['percentage'],
+                'notes' => $notes
+            ]);
+        }
+
+        return $this->success(null, 'Job status updated');
+    }
 }

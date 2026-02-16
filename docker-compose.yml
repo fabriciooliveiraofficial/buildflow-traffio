@@ -12,11 +12,15 @@ services:
       - "8000:80"
     volumes:
       - ./:/var/www/html
+      - ./docker/apache/servername.conf:/etc/apache2/conf-enabled/servername.conf:ro
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-enabled/000-default.conf:ro
     environment:
       - DB_HOST=db
       - DB_NAME=traffio_erp
       - DB_USER=traffio
       - DB_PASS=secure_pass
+      - APP_URL=http://localhost:3005
+      - APP_ENV=local
     networks:
       - traffio-net
     depends_on:
@@ -36,6 +40,7 @@ services:
       - mysql-data:/var/lib/mysql
       # Initialize database with schema on first run
       - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./database/02-fix-permissions.sql:/docker-entrypoint-initdb.d/02-fix-permissions.sql
     networks:
       - traffio-net
     command: --default-authentication-plugin=mysql_native_password
@@ -66,7 +71,7 @@ services:
     ports:
       - "3005:3000"
       - "3001:3001"
-    command: sh -c "npm install -g browser-sync && browser-sync start --proxy 'app:80' --files '**/*.php, **/*.css, **/*.js' --no-open --port 3000 --host 0.0.0.0"
+    command: sh -c "npm install -g browser-sync && browser-sync start --config bs-config.js"
     networks:
       - traffio-net
     depends_on:
