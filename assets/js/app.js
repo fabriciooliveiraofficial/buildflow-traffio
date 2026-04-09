@@ -931,25 +931,29 @@ class SidebarPatcher {
         const sidebar = document.getElementById('sidebar');
         if (!sidebar) return;
 
-        // 1. Correct "Fluxo de Caixa" -> "Cash Flow"
+        // 1. Correct any link to cash-flow
         const links = sidebar.querySelectorAll('a[href*="/cash-flow"]');
         links.forEach(link => {
             const span = link.querySelector('span');
-            if (span && (span.textContent.trim() === 'Fluxo de Caixa' || span.textContent.trim() === 'Fluxo')) {
+            // Force the name
+            if (span) {
                 span.textContent = 'Cash Flow';
-                console.log('SidebarPatcher: Corrected name to Cash Flow');
             }
 
-            // 2. Ensure it is in the "OVERVIEW" section
-            const overviewSection = Array.from(sidebar.querySelectorAll('.nav-section')).find(s => 
-                s.querySelector('.nav-section-title')?.textContent.trim() === 'OVERVIEW'
-            );
-            
-            if (overviewSection && !overviewSection.contains(link)) {
-                overviewSection.appendChild(link);
-                console.log('SidebarPatcher: Moved link to OVERVIEW');
+            // 2. Force it into the FIRST section (typically OVERVIEW)
+            const firstSection = sidebar.querySelector('.nav-section');
+            if (firstSection && !firstSection.contains(link)) {
+                // Remove from current parent if it's in the wrong place
+                firstSection.appendChild(link);
+                console.log('SidebarPatcher: Forced link into first section');
             }
         });
+
+        // 3. Ensure the active state is correct
+        const currentPath = window.location.pathname;
+        if (currentPath.includes('/cash-flow')) {
+            links.forEach(link => link.classList.add('active'));
+        }
     }
 }
 
