@@ -19,6 +19,6 @@ jobs:
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
           REMOTE_PORT: 65002
-          TARGET: public_html/
+          TARGET: /home/u540654612/domains/buildflow-traffio.com/public_html/
           EXCLUDE: "/.git/, /.github/, /mysql-data/, /legacy/, /_public_html/, /Dockerfile, /docker-compose.yml, /.agent/, /docs/, README.md, .env"
           ARGS: "-rlgoDzvc -i --delete"
