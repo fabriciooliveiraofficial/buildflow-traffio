@@ -1,10 +1,23 @@
 {
-    "version": "1.0.1",
-    "build": "20251212",
-    "name": "Update Dec 12, 2025",
-    "releaseDate": "2025-12-12",
+    "version": "1.1.0",
+    "build": "20260409",
+    "name": "Cash Flow Release",
+    "releaseDate": "2026-04-09",
     "minSupportedVersion": "1.0.0",
     "changelog": [
+        {
+            "version": "1.1.0",
+            "date": "2026-04-09",
+            "features": [
+                "Finalizado módulo de Cash Flow com filtros dinâmicos por projeto e busca",
+                "Adicionado modal de Novo Lançamento (Rápido) para receitas e despesas",
+                "Implementada exportação para CSV filtrada"
+            ],
+            "fixes": [
+                "Corrigida persistência do layout e nomeação na barra lateral"
+            ],
+            "improvements": []
+        },
         {
             "version": "1.0.1",
             "date": "2025-12-12",

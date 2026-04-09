@@ -1,5 +1,5 @@
 <?php
-$title = 'Fluxo de Caixa (Cash Flow)';
+$title = 'Cash Flow';
 $page = 'cash-flow';
 
 ob_start();

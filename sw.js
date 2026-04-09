@@ -5,7 +5,7 @@
  * Version-controlled for easy updates.
  */
 
-const CACHE_VERSION = 'v1.0.0';
+const CACHE_VERSION = 'v1.1.0';
 const CACHE_NAME = `buildflow-${CACHE_VERSION}`;
 const STATIC_CACHE = `buildflow-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `buildflow-dynamic-${CACHE_VERSION}`;
@@ -280,7 +280,7 @@ self.addEventListener('push', (event) => {
     console.log('[ServiceWorker] Push received');
 
     let data = {
-        title: 'BuildFlow',
+        title: 'Cash Flow',
         body: 'You have a new notification'
     };
 
