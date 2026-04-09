@@ -1,7 +1,7 @@
 <?php
 /**
  * Main Application Layout
- * BUILD_VERSION: 1.1.2
+ * BUILD_VERSION: 1.1.3
  * QuickBooks-style sidebar navigation with responsive design
  */
 
@@ -507,7 +507,7 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <div class="modal-backdrop"></div>
 
     <!-- Scripts -->
-    <script src="/assets/js/app.js?v=<?= time() ?>"></script>
+    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.3"></script>
     <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
     <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
     <script>

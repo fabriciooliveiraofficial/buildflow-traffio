@@ -914,3 +914,46 @@ window.ERP = {
     DataTable,
     sessionManager,
 };
+
+// =====================================================
+// Sidebar UI Patcher (Self-Healing)
+// =====================================================
+
+class SidebarPatcher {
+    static init() {
+        // Run once on load and again after a short delay to catch dynamic injections
+        this.patch();
+        setTimeout(() => this.patch(), 500);
+        setTimeout(() => this.patch(), 2000);
+    }
+
+    static patch() {
+        const sidebar = document.getElementById('sidebar');
+        if (!sidebar) return;
+
+        // 1. Correct "Fluxo de Caixa" -> "Cash Flow"
+        const links = sidebar.querySelectorAll('a[href*="/cash-flow"]');
+        links.forEach(link => {
+            const span = link.querySelector('span');
+            if (span && (span.textContent.trim() === 'Fluxo de Caixa' || span.textContent.trim() === 'Fluxo')) {
+                span.textContent = 'Cash Flow';
+                console.log('SidebarPatcher: Corrected name to Cash Flow');
+            }
+
+            // 2. Ensure it is in the "OVERVIEW" section
+            const overviewSection = Array.from(sidebar.querySelectorAll('.nav-section')).find(s => 
+                s.querySelector('.nav-section-title')?.textContent.trim() === 'OVERVIEW'
+            );
+            
+            if (overviewSection && !overviewSection.contains(link)) {
+                overviewSection.appendChild(link);
+                console.log('SidebarPatcher: Moved link to OVERVIEW');
+            }
+        });
+    }
+}
+
+// Initialize on DOM load
+document.addEventListener('DOMContentLoaded', () => {
+    SidebarPatcher.init();
+});

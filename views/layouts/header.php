@@ -48,7 +48,7 @@ $title = $pageTitle ?? 'Dashboard';
 </head>
 
 <body>
-    <div class="app-container">
+    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.3"></script>
         <!-- Sidebar Overlay (Mobile) -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
