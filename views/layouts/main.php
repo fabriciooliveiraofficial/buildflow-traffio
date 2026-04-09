@@ -1,6 +1,7 @@
 <?php
 /**
  * Main Application Layout
+ * BUILD_VERSION: 1.1.2
  * QuickBooks-style sidebar navigation with responsive design
  */
 

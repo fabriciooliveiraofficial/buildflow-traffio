@@ -76,21 +76,30 @@ $title = $pageTitle ?? 'Dashboard';
                     <a href="<?= $basePath ?>/dashboard"
                         class="nav-item <?= ($page === 'dashboard') ? 'active' : '' ?>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="3" y="3" width="7" height="9" />
-                            <rect x="14" y="3" width="7" height="5" />
-                            <rect x="14" y="12" width="7" height="9" />
-                            <rect x="3" y="16" width="7" height="5" />
+                            <rect x="3" y="3" width="7" height="7" />
+                            <rect x="14" y="3" width="7" height="7" />
+                            <rect x="14" y="14" width="7" height="7" />
+                            <rect x="3" y="14" width="7" height="7" />
                         </svg>
                         <span>Dashboard</span>
+                    </a>
+                    <a href="<?= $basePath ?>/cash-flow"
+                        class="nav-item <?= ($page === 'cash-flow') ? 'active' : '' ?>">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                        <span>Cash Flow</span>
                     </a>
                 </div>
 
                 <div class="nav-section">
-                    <div class="nav-section-title">BUSINESS</div>
+                    <div class="nav-section-title">MANAGEMENT</div>
                     <a href="<?= $basePath ?>/projects"
                         class="nav-item <?= ($page === 'projects') ? 'active' : '' ?>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+                            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
                         </svg>
                         <span>Projects</span>
                     </a>
@@ -104,6 +113,18 @@ $title = $pageTitle ?? 'Dashboard';
                         </svg>
                         <span>Clients</span>
                     </a>
+                    <a href="<?= $basePath ?>/employees"
+                        class="nav-item <?= ($page === 'employees') ? 'active' : '' ?>">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                        </svg>
+                        <span>Employees</span>
+                    </a>
+                </div>
+
+                <div class="nav-section">
+                    <div class="nav-section-title">FINANCE</div>
                     <a href="<?= $basePath ?>/invoices"
                         class="nav-item <?= ($page === 'invoices') ? 'active' : '' ?>">
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -119,8 +140,7 @@ $title = $pageTitle ?? 'Dashboard';
                         <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                             <polyline points="14 2 14 8 20 8" />
-                            <line x1="12" y1="18" x2="12" y2="12" />
-                            <line x1="9" y1="15" x2="15" y2="15" />
+                            <path d="M9 13h2l1.5 3 2.5-6 1.5 3h2" />
                         </svg>
                         <span>Estimates</span>
                     </a>

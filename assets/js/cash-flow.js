@@ -106,11 +106,13 @@ function renderKPIs() {
     
     // Total balance (running balance total from latest transaction)
     if (state.transactions.length > 0) {
-        // Find the absolute latest transaction (first in sorted list)
         const latest = state.transactions[0];
         document.getElementById('kpi-available-balance').textContent = formatCurrency(latest.running_balance);
         document.getElementById('kpi-available-balance').classList.remove('text-warning');
         document.getElementById('kpi-available-balance').classList.add(latest.running_balance >= 0 ? 'text-success' : 'text-error');
+    } else {
+        document.getElementById('kpi-available-balance').textContent = formatCurrency(0);
+        document.getElementById('kpi-available-balance').classList.remove('text-warning', 'text-success', 'text-error');
     }
 }
 

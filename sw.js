@@ -5,8 +5,9 @@
  * Version-controlled for easy updates.
  */
 
-const CACHE_VERSION = 'v1.1.0';
-const CACHE_NAME = `buildflow-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v1.1.2';
+const CACHE_NAME = 'buildflow-cache-v1.1.2';
+const VERSION = '1.1.2';
 const STATIC_CACHE = `buildflow-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `buildflow-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `buildflow-api-${CACHE_VERSION}`;

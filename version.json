@@ -1,10 +1,23 @@
 {
-    "version": "1.1.0",
+    "version": "1.1.2",
     "build": "20260409",
     "name": "Cash Flow Release",
     "releaseDate": "2026-04-09",
     "minSupportedVersion": "1.0.0",
     "changelog": [
+        {
+            "version": "1.1.2",
+            "date": "2026-04-09",
+            "features": [
+                "Permanent sidebar positioning for Cash Flow",
+                "Full English translation of Cash Flow module"
+            ],
+            "fixes": [
+                "Fixed sidebar reverting to old position on page refresh",
+                "Improved cache invalidation strategy"
+            ],
+            "improvements": []
+        },
         {
             "version": "1.1.0",
             "date": "2026-04-09",

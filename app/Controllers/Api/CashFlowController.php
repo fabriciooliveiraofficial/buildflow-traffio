@@ -37,17 +37,15 @@ class CashFlowController extends Controller
 
         // Apply filters
         if ($projectId) {
-            $incomeWhere[] = "project_id = ?";
+            $incomeWhere[] = "i.project_id = ?";
             $incomeBindings[] = $projectId;
             
             $expenseWhere[] = "project_id = ?";
             $expenseBindings[] = $projectId;
-            
-            // Payroll filtering by project is usually via time logs, here we simplify or skip
         }
 
         if ($search) {
-            $incomeWhere[] = "(invoice_number LIKE ? OR notes LIKE ?)";
+            $incomeWhere[] = "(i.invoice_number LIKE ? OR i.notes LIKE ?)";
             $incomeBindings[] = "%$search%";
             $incomeBindings[] = "%$search%";
             
@@ -60,11 +58,13 @@ class CashFlowController extends Controller
         $expenseWhereStr = implode(" AND ", $expenseWhere);
         $payrollWhereStr = implode(" AND ", $payrollWhere);
 
-        // 1. Cash In: Total paid invoices in period
+        // 1. Cash In: Total Real Payments in period (Joined with invoices for project filter)
         $cashIn = $this->db->fetch(
-            "SELECT COALESCE(SUM(paid_amount), 0) as total FROM invoices 
-             WHERE {$incomeWhereStr}",
-            $incomeBindings
+            "SELECT COALESCE(SUM(p.amount), 0) as total 
+             FROM payments p
+             JOIN invoices i ON p.invoice_id = i.id
+             WHERE p.status = 'completed' AND i.tenant_id = ? AND p.payment_date BETWEEN ? AND ? " . ($projectId ? "AND i.project_id = ?" : "") . " " . ($search ? "AND (i.invoice_number LIKE ? OR i.notes LIKE ?)" : ""),
+            $this->buildProjectSearchBindings($tenantId, $startDate, $endDate, $projectId, $search)
         );
 
         // 2. Cash Out: Total approved expenses in period
@@ -75,9 +75,8 @@ class CashFlowController extends Controller
         );
 
         // 3. Cash Out: Total payroll paid in period
-        // (Note: Payroll doesn't always have a direct project_id link in summary unless filtered by project_id)
         $cashOutPayroll = ['total' => 0];
-        if (!$projectId) { // Simplify: only show payroll in global summary or implement deep logic
+        if (!$projectId && !$search) { 
             $cashOutPayroll = $this->db->fetch(
                 "SELECT COALESCE(SUM(pr.net_pay), 0) as total
                  FROM payroll_records pr
@@ -95,11 +94,12 @@ class CashFlowController extends Controller
         $trendStart = date('Y-m-01', strtotime('-5 months'));
         $trendEnd = date('Y-m-t');
 
-        // Note: Charts usually stay global or respond to project filter only
+        // Note: Charts use the same project logic
         $monthlyTrend = $this->db->fetchAll(
             "SELECT month, SUM(income) as income, SUM(expense) as expense FROM (
-                SELECT DATE_FORMAT(paid_at, '%Y-%m') as month, SUM(paid_amount) as income, 0 as expense
-                FROM invoices WHERE tenant_id = ? AND paid_at BETWEEN ? AND ? " . ($projectId ? "AND project_id = ?" : "") . " GROUP BY month
+                SELECT DATE_FORMAT(p.payment_date, '%Y-%m') as month, SUM(p.amount) as income, 0 as expense
+                FROM payments p JOIN invoices i ON p.invoice_id = i.id
+                WHERE p.status = 'completed' AND i.tenant_id = ? AND p.payment_date BETWEEN ? AND ? " . ($projectId ? "AND i.project_id = ?" : "") . " GROUP BY month
                 UNION ALL
                 SELECT DATE_FORMAT(expense_date, '%Y-%m') as month, 0 as income, SUM(amount) as expense
                 FROM expenses WHERE tenant_id = ? AND expense_date BETWEEN ? AND ? AND status = 'approved' " . ($projectId ? "AND project_id = ?" : "") . " GROUP BY month
@@ -108,9 +108,7 @@ class CashFlowController extends Controller
                 FROM payroll_records pr JOIN payroll_periods pp ON pr.payroll_period_id = pp.id 
                 WHERE pr.tenant_id = ? AND pp.period_end BETWEEN ? AND ? GROUP BY month
             ) combined GROUP BY month ORDER BY month ASC",
-            $projectId 
-                ? [$tenantId, $trendStart, $trendEnd, $projectId, $tenantId, $trendStart, $trendEnd, $projectId, $tenantId, $trendStart, $trendEnd]
-                : [$tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd]
+            $this->buildProjectSearchBindingsForTrend($tenantId, $trendStart, $trendEnd, $projectId)
         );
 
         // 5. Expense Distribution (by category)
@@ -143,6 +141,27 @@ class CashFlowController extends Controller
                 'categories' => $categories
             ]
         ]);
+    }
+    /**
+     * Helper to build consistent bindings for project/search filters
+     */
+    private function buildProjectSearchBindings($tenantId, $start, $end, $projectId, $search): array
+    {
+        $bindings = [$tenantId, $start, $end];
+        if ($projectId) $bindings[] = $projectId;
+        if ($search) {
+            $bindings[] = "%$search%";
+            $bindings[] = "%$search%";
+        }
+        return $bindings;
+    }
+
+    private function buildProjectSearchBindingsForTrend($tenantId, $start, $end, $projectId): array
+    {
+        if ($projectId) {
+            return [$tenantId, $start, $end, $projectId, $tenantId, $start, $end, $projectId, $tenantId, $start, $end];
+        }
+        return [$tenantId, $start, $end, $tenantId, $start, $end, $tenantId, $start, $end];
     }
 
     /**
