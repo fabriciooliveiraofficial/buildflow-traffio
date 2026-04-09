@@ -18,16 +18,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
           REMOTE_USER: ${{ secrets.REMOTE_USER }}
+          REMOTE_PORT: 65002
           TARGET: public_html/
-          EXCLUDE: |
-            **/.git*
-            **/.git*/**
-            **/mysql-data/**
-            **/legacy/**
-            **/_public_html/**
-            **/Dockerfile
-            **/docker-compose.yml
-            **/.agent/**
-            **/docs/**
-            README.md
-            .env
+          EXCLUDE: "/.git/, /.github/, /mysql-data/, /legacy/, /_public_html/, /Dockerfile, /docker-compose.yml, /.agent/, /docs/, README.md, .env"
+          ARGS: "-rlgoDzvc -i --delete"
