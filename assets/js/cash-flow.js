@@ -1,5 +1,5 @@
 /**
- * Cash Flow (Fluxo de Caixa) Module
+ * Cash Flow Module
  */
 
 let trendChart = null;
@@ -9,25 +9,26 @@ let debounceTimer = null;
 const state = {
     filters: {
         project_id: '',
-        start_date: '', // Will be set to 1st of current month
-        end_date: '',   // Will be set to last day of current month
+        start_date: '',
+        end_date: '',
         search: '',
         page: 1,
         per_page: 50
     },
     summary: null,
-    transactions: []
+    transactions: [],
+    categories: {
+        income: ['Serviços', 'Materiais', 'Consultoria', 'Outros'],
+        expense: ['Material de Construção', 'Mão de Obra', 'Logística', 'Equipamento', 'Administrativo', 'Impostos']
+    }
 };
 
 document.addEventListener('DOMContentLoaded', function() {
     initFilters();
     loadDashboard();
-    loadProjects(); // For the filter dropdown
+    loadProjects();
 });
 
-/**
- * Initialize filter values
- */
 function initFilters() {
     const now = new Date();
     const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -41,7 +42,7 @@ function initFilters() {
 }
 
 /**
- * Load all dashboard data (stats + charts + ledger)
+ * Load all dashboard data (Stats + Charts + Transactions)
  */
 async function loadDashboard() {
     updateFilters();
@@ -55,15 +56,13 @@ async function loadDashboard() {
     hideLoading();
 }
 
-/**
- * Fetch summary stats and chart data
- */
 async function fetchSummary() {
     try {
         const query = new URLSearchParams({
             start_date: state.filters.start_date,
             end_date: state.filters.end_date,
-            project_id: state.filters.project_id
+            project_id: state.filters.project_id,
+            search: state.filters.search
         });
 
         const response = await ERP.api.get(`/cash-flow/summary?${query}`);
@@ -77,9 +76,6 @@ async function fetchSummary() {
     }
 }
 
-/**
- * Fetch unified transaction ledger
- */
 async function fetchTransactions() {
     try {
         const query = new URLSearchParams({
@@ -90,16 +86,18 @@ async function fetchTransactions() {
         if (response.success) {
             state.transactions = response.data.transactions;
             renderLedger(response.data.pagination);
+            
+            // Re-render KPIs to update Available Balance based on ledger results
+            renderKPIs();
         }
     } catch (error) {
         ERP.ui.notify('error', 'Falha ao carregar transações: ' + error.message);
     }
 }
 
-/**
- * Render KPI Cards
- */
 function renderKPIs() {
+    if (!state.summary) return;
+    
     const s = state.summary.stats;
     document.getElementById('kpi-net-flow').textContent = formatCurrency(s.net_flow);
     document.getElementById('kpi-cash-in').textContent = formatCurrency(s.cash_in);
@@ -108,21 +106,19 @@ function renderKPIs() {
     
     // Total balance (running balance total from latest transaction)
     if (state.transactions.length > 0) {
+        // Find the absolute latest transaction (first in sorted list)
         const latest = state.transactions[0];
         document.getElementById('kpi-available-balance').textContent = formatCurrency(latest.running_balance);
+        document.getElementById('kpi-available-balance').classList.remove('text-warning');
+        document.getElementById('kpi-available-balance').classList.add(latest.running_balance >= 0 ? 'text-success' : 'text-error');
     }
 }
 
-/**
- * Render/Update Charts
- */
 function renderCharts() {
-    // 1. Trend Chart
     const trendCtx = document.getElementById('cashTrendChart').getContext('2d');
     const trendData = state.summary.charts.trend;
     
     if (trendChart) trendChart.destroy();
-    
     trendChart = new Chart(trendCtx, {
         type: 'line',
         data: {
@@ -149,52 +145,37 @@ function renderCharts() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'top' }
-            },
-            scales: {
-                y: { beginAtZero: true, ticks: { callback: (value) => '$' + value } }
-            }
+            scales: { y: { beginAtZero: true } }
         }
     });
 
-    // 2. Category Chart
     const catCtx = document.getElementById('categoryChart').getContext('2d');
     const catData = state.summary.charts.categories;
     
     if (categoryChart) categoryChart.destroy();
-    
     categoryChart = new Chart(catCtx, {
         type: 'doughnut',
         data: {
             labels: catData.map(d => d.category),
             datasets: [{
                 data: catData.map(d => d.total),
-                backgroundColor: [
-                    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', 
-                    '#ec4899', '#06b6d4', '#475569'
-                ]
+                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: { position: 'bottom' }
-            }
+            plugins: { legend: { position: 'bottom' } }
         }
     });
 }
 
-/**
- * Render Ledger Table
- */
 function renderLedger(pagination) {
     const body = document.getElementById('ledger-body');
     body.innerHTML = '';
 
     if (state.transactions.length === 0) {
-        body.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-muted italic">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>';
+        body.innerHTML = '<tr><td colspan="6" class="text-center py-8 text-muted italic">Nenhum lançamento encontrado.</td></tr>';
         return;
     }
 
@@ -216,21 +197,17 @@ function renderLedger(pagination) {
             <td class="px-4 py-3 text-sm text-right font-bold ${t.type === 'income' ? 'text-success' : 'text-error'}">
                 ${t.type === 'income' ? '+' : '-'}${formatCurrency(Math.abs(t.amount))}
             </td>
-            <td class="px-4 py-3 text-sm text-right font-mono text-gray-500">
+            <td class="px-4 py-3 text-sm text-right font-mono text-gray-400">
                 ${formatCurrency(t.running_balance)}
             </td>
         `;
         body.appendChild(row);
     });
 
-    // Pagination info
     document.getElementById('pagination-info').textContent = 
-        `Mostrando ${state.transactions.length} de ${pagination.total} lançamentos (Página ${pagination.current_page} de ${pagination.total_pages})`;
+        `Mostrando ${state.transactions.length} de ${pagination.total} lançamentos`;
 }
 
-/**
- * Update state from UI filters
- */
 function updateFilters() {
     state.filters.project_id = document.getElementById('filter-project').value;
     state.filters.start_date = document.getElementById('filter-start').value;
@@ -239,8 +216,81 @@ function updateFilters() {
 }
 
 /**
- * Project list for dropdown
+ * UI Actions
  */
+function debounceLoad() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => {
+        loadDashboard(); // Full reload to sync charts and KPIs with search
+    }, 500);
+}
+
+function loadTransactions() {
+    loadDashboard();
+}
+
+function openQuickEntryModal() {
+    const modal = document.getElementById('quick-entry-modal');
+    modal.classList.add('show');
+    
+    // Pre-populate project dropdown in modal
+    const modalProject = document.getElementById('modal-project');
+    const mainProject = document.getElementById('filter-project');
+    modalProject.innerHTML = mainProject.innerHTML;
+    
+    updateCategoryOptions();
+}
+
+function closeQuickEntryModal() {
+    document.getElementById('quick-entry-modal').classList.remove('show');
+    document.getElementById('quick-entry-form').reset();
+}
+
+function updateCategoryOptions() {
+    const type = document.querySelector('[name="type"]').value;
+    const select = document.getElementById('modal-category');
+    select.innerHTML = '';
+    
+    state.categories[type].forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        select.appendChild(opt);
+    });
+}
+
+async function saveQuickEntry(event) {
+    event.preventDefault();
+    const form = event.target;
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData.entries());
+    
+    try {
+        const response = await ERP.api.post('/cash-flow/summary', data); // We'll map POST /cash-flow/summary to CashFlowController@store
+        if (response.success) {
+            ERP.ui.notify('success', response.message);
+            closeQuickEntryModal();
+            loadDashboard();
+        }
+    } catch (e) {
+        ERP.ui.notify('error', 'Falha ao salvar: ' + e.message);
+    }
+}
+
+function exportToExcel() {
+    updateFilters();
+    const query = new URLSearchParams(state.filters);
+    ERP.ui.notify('info', 'Gerando arquivo de exportação...');
+    
+    // Call the export API which returns a download_url
+    ERP.api.get(`/reports/export?type=cash-flow&format=csv&${query}`)
+        .then(res => {
+            if (res.success && res.data.download_url) {
+                window.location.href = res.data.download_url;
+            }
+        });
+}
+
 async function loadProjects() {
     try {
         const response = await ERP.api.get('/projects?per_page=100');
@@ -256,41 +306,14 @@ async function loadProjects() {
     } catch (e) {}
 }
 
-function debounceLoad() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(() => {
-        loadTransactions();
-    }, 500);
-}
-
-function loadTransactions() {
-    updateFilters();
-    fetchTransactions();
-}
-
-/**
- * Format Currency (BRL/USD based on preference, defaulting to ERP standard)
- */
 function formatCurrency(amount) {
-    return new Intl.NumberFormat('en-AU', { 
-        style: 'currency', 
-        currency: 'AUD' // Traffio usually uses AUD/USD, adapting to layout
-    }).format(amount);
+    return new Intl.NumberFormat('en-AU', { style: 'currency', currency: 'AUD' }).format(amount);
 }
 
 function showLoading() {
-    // Logic for loading overlays if needed
+    document.getElementById('ledger-body').style.opacity = '0.5';
 }
 
 function hideLoading() {
-    // Logic for hiding loading overlays if needed
-}
-
-function openQuickEntryModal() {
-    ERP.ui.notify('info', 'Funcionalidade de lançamento rápido em desenvolvimento.');
-}
-
-function exportToExcel() {
-    const query = new URLSearchParams(state.filters);
-    window.location.href = `/api/reports/export?type=cash-flow&format=csv&${query}`;
+    document.getElementById('ledger-body').style.opacity = '1';
 }

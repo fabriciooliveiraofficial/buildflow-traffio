@@ -214,6 +214,11 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
     $router->get('/projects/{id}/labor-cost', 'Api\\ProjectController@laborCost');
     $router->get('/projects/{id}/financials', 'Api\\ProjectController@financials');
     $router->get('/projects/{id}/ledger', 'Api\\ProjectController@ledger');
+    
+    // Cash Flow Routes
+    $router->get('/cash-flow/summary', 'Api\\CashFlowController@summary');
+    $router->post('/cash-flow/summary', 'Api\\CashFlowController@store');
+    $router->get('/cash-flow/transactions', 'Api\\CashFlowController@transactions');
     $router->post('/projects/{id}/payments', 'PaymentController@storeProjectPayment');
     $router->put('/payments/{id}', 'PaymentController@update');
     $router->delete('/payments/{id}', 'PaymentController@destroy');
@@ -483,6 +488,7 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
     $router->get('/reports/employees', 'Api\\ReportsController@employees');
     $router->get('/reports/time', 'Api\\ReportsController@timeTracking');
     $router->get('/reports/export', 'Api\\ReportsController@export');
+    $router->get('/reports/download', 'Api\\ReportsController@download');
 
     // Financial Reports (Trial Balance, Income Statement, Balance Sheet)
     $router->get('/financial-reports/trial-balance', 'Api\\FinancialReportsController@trialBalance');

@@ -167,6 +167,14 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
                         </svg>
                         <span>Dashboard</span>
                     </a>
+                    <a href="<?= $basePath ?>/cash-flow"
+                        class="nav-item <?= ($page ?? '') === 'cash-flow' ? 'active' : '' ?>">
+                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                        </svg>
+                        <span>Cash Flow</span>
+                    </a>
                 </div>
 
                 <div class="nav-section">
@@ -237,14 +245,6 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
                             <line x1="6" y1="20" x2="6" y2="14" />
                         </svg>
                         <span>Financial Reports</span>
-                    </a>
-                    <a href="<?= $basePath ?>/cash-flow"
-                        class="nav-item <?= ($page ?? '') === 'cash-flow' ? 'active' : '' ?>">
-                        <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                        </svg>
-                        <span>Fluxo de Caixa</span>
                     </a>
                     <a href="<?= $basePath ?>/invoices"
                         class="nav-item <?= ($page ?? '') === 'invoices' ? 'active' : '' ?>">

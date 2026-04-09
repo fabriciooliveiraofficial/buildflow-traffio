@@ -7,7 +7,7 @@ ob_start();
 
 <div class="flex justify-between items-center mb-6">
     <div>
-        <h1 class="text-2xl font-bold">Fluxo de Caixa</h1>
+        <h1 class="text-2xl font-bold">Cash Flow</h1>
         <p class="text-muted text-sm">Visão geral unificada de entradas e saídas financeiras</p>
     </div>
     <div class="flex gap-2">
@@ -136,6 +136,78 @@ ob_start();
         <span class="text-sm text-muted" id="pagination-info">Mostrando 0 de 0 lançamentos</span>
         <div class="flex gap-1" id="pagination-controls">
             <!-- Rendered dynamically -->
+        </div>
+    </div>
+</div>
+
+<!-- Quick Entry Modal -->
+<div id="quick-entry-modal" class="modal">
+    <div class="modal-content max-w-lg">
+        <div class="modal-header">
+            <h5 class="modal-title font-bold">Novo Lançamento (Quick Entry)</h5>
+            <button class="modal-close" onclick="closeQuickEntryModal()">&times;</button>
+        </div>
+        <div class="modal-body p-6">
+            <form id="quick-entry-form" onsubmit="saveQuickEntry(event)">
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label font-bold text-xs uppercase text-muted">Tipo</label>
+                        <select name="type" class="form-select" required onchange="updateCategoryOptions()">
+                            <option value="income">Entrada (Crédito)</option>
+                            <option value="expense">Saída (Débito)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label font-bold text-xs uppercase text-muted">Valor</label>
+                        <input type="number" name="amount" class="form-input" step="0.01" required placeholder="0.00">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div class="form-group">
+                        <label class="form-label font-bold text-xs uppercase text-muted">Data</label>
+                        <input type="date" name="date" class="form-input" required value="<?= date('Y-m-d') ?>">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label font-bold text-xs uppercase text-muted">Met. Pagamento</label>
+                        <select name="payment_method" class="form-select">
+                            <option value="cash">Dinheiro</option>
+                            <option value="bank_transfer">Transferência / PIX</option>
+                            <option value="credit_card">Cartão de Crédito</option>
+                            <option value="check">Cheque</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label font-bold text-xs uppercase text-muted">Projeto (Opcional)</label>
+                    <select name="project_id" id="modal-project" class="form-select">
+                        <option value="">Selecione o Projeto...</option>
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label font-bold text-xs uppercase text-muted">Categoria</label>
+                    <select name="category" id="modal-category" class="form-select" required>
+                        <!-- Dynamic -->
+                    </select>
+                </div>
+
+                <div class="form-group mb-4">
+                    <label class="form-label font-bold text-xs uppercase text-muted">Pessoa / Fornecedor</label>
+                    <input type="text" name="person" class="form-input" placeholder="Cliente ou Fornecedor">
+                </div>
+
+                <div class="form-group mb-6">
+                    <label class="form-label font-bold text-xs uppercase text-muted">Descrição</label>
+                    <input type="text" name="description" class="form-input" required placeholder="Ex: Pagamento Materiais">
+                </div>
+
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="btn btn-secondary" onclick="closeQuickEntryModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Salvar Lançamento</button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

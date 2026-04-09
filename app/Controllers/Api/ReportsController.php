@@ -314,21 +314,71 @@ class ReportsController extends Controller
                 break;
             case 'cash-flow':
                 $cf = new CashFlowController();
-                $data = $cf->transactions()['data']['transactions'];
+                $transactions = $cf->transactions();
+                $data = $transactions['data']['transactions'];
                 break;
             default:
                 $this->error('Invalid report type', 422);
         }
 
         if ($format === 'csv') {
-            // Return CSV download info
+            // Include original params in download URL
+            $query = http_build_query($params);
             return $this->success([
-                'download_url' => '/api/reports/download?type=' . $reportType,
+                'download_url' => '/api/reports/download?' . $query,
                 'format' => 'csv',
             ]);
         }
 
         return $this->success($data);
+    }
+
+    /**
+     * Download report as CSV
+     */
+    public function download(): void
+    {
+        $params = $_GET;
+        $reportType = $params['type'] ?? 'financial';
+        
+        $data = [];
+        $filename = $reportType . '_report_' . date('Y-m-d') . '.csv';
+
+        switch ($reportType) {
+            case 'cash-flow':
+                $cf = new CashFlowController();
+                $res = $cf->transactions();
+                $data = $res['data']['transactions'];
+                $headers = ['Date', 'Type', 'Description', 'Category', 'Person/Vendor', 'Amount', 'Balance'];
+                $rows = array_map(function($t) {
+                    return [
+                        $t['date'],
+                        $t['type'],
+                        $t['description'],
+                        $t['category'],
+                        $t['person'],
+                        $t['amount'],
+                        $t['running_balance']
+                    ];
+                }, $data);
+                break;
+            // Add other cases as needed
+            default:
+                $data = []; // Fallback
+                $headers = [];
+                $rows = [];
+        }
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+
+        $output = fopen('php://output', 'w');
+        fputcsv($output, $headers);
+        foreach ($rows as $row) {
+            fputcsv($output, $row);
+        }
+        fclose($output);
+        exit;
     }
 
     /**

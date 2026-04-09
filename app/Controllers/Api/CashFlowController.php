@@ -20,30 +20,72 @@ class CashFlowController extends Controller
         $params = $this->getQueryParams();
         $startDate = $params['start_date'] ?? date('Y-m-01');
         $endDate = $params['end_date'] ?? date('Y-m-t');
+        $projectId = $params['project_id'] ?? null;
+        $search = $params['search'] ?? null;
+        $category = $params['category'] ?? null;
         $tenantId = $this->db->getTenantId();
+
+        // Base conditions for reuse
+        $incomeWhere = ["tenant_id = ?", "paid_at BETWEEN ? AND ?"];
+        $incomeBindings = [$tenantId, $startDate, $endDate];
+        
+        $expenseWhere = ["tenant_id = ?", "expense_date BETWEEN ? AND ?", "status = 'approved'"];
+        $expenseBindings = [$tenantId, $startDate, $endDate];
+
+        $payrollWhere = ["pr.tenant_id = ?", "pp.period_end BETWEEN ? AND ?"];
+        $payrollBindings = [$tenantId, $startDate, $endDate];
+
+        // Apply filters
+        if ($projectId) {
+            $incomeWhere[] = "project_id = ?";
+            $incomeBindings[] = $projectId;
+            
+            $expenseWhere[] = "project_id = ?";
+            $expenseBindings[] = $projectId;
+            
+            // Payroll filtering by project is usually via time logs, here we simplify or skip
+        }
+
+        if ($search) {
+            $incomeWhere[] = "(invoice_number LIKE ? OR notes LIKE ?)";
+            $incomeBindings[] = "%$search%";
+            $incomeBindings[] = "%$search%";
+            
+            $expenseWhere[] = "(description LIKE ? OR vendor LIKE ?)";
+            $expenseBindings[] = "%$search%";
+            $expenseBindings[] = "%$search%";
+        }
+
+        $incomeWhereStr = implode(" AND ", $incomeWhere);
+        $expenseWhereStr = implode(" AND ", $expenseWhere);
+        $payrollWhereStr = implode(" AND ", $payrollWhere);
 
         // 1. Cash In: Total paid invoices in period
         $cashIn = $this->db->fetch(
             "SELECT COALESCE(SUM(paid_amount), 0) as total FROM invoices 
-             WHERE tenant_id = ? AND paid_at BETWEEN ? AND ?",
-            [$tenantId, $startDate, $endDate]
+             WHERE {$incomeWhereStr}",
+            $incomeBindings
         );
 
         // 2. Cash Out: Total approved expenses in period
         $cashOutExpenses = $this->db->fetch(
             "SELECT COALESCE(SUM(amount), 0) as total FROM expenses 
-             WHERE tenant_id = ? AND expense_date BETWEEN ? AND ? AND status = 'approved'",
-            [$tenantId, $startDate, $endDate]
+             WHERE {$expenseWhereStr}",
+            $expenseBindings
         );
 
         // 3. Cash Out: Total payroll paid in period
-        $cashOutPayroll = $this->db->fetch(
-            "SELECT COALESCE(SUM(pr.net_pay), 0) as total
-             FROM payroll_records pr
-             JOIN payroll_periods pp ON pr.payroll_period_id = pp.id
-             WHERE pr.tenant_id = ? AND pp.period_end BETWEEN ? AND ?",
-            [$tenantId, $startDate, $endDate]
-        );
+        // (Note: Payroll doesn't always have a direct project_id link in summary unless filtered by project_id)
+        $cashOutPayroll = ['total' => 0];
+        if (!$projectId) { // Simplify: only show payroll in global summary or implement deep logic
+            $cashOutPayroll = $this->db->fetch(
+                "SELECT COALESCE(SUM(pr.net_pay), 0) as total
+                 FROM payroll_records pr
+                 JOIN payroll_periods pp ON pr.payroll_period_id = pp.id
+                 WHERE {$payrollWhereStr}",
+                $payrollBindings
+            );
+        }
 
         $totalIn = (float) $cashIn['total'];
         $totalOut = (float) $cashOutExpenses['total'] + (float) $cashOutPayroll['total'];
@@ -53,28 +95,30 @@ class CashFlowController extends Controller
         $trendStart = date('Y-m-01', strtotime('-5 months'));
         $trendEnd = date('Y-m-t');
 
-        // Combined monthly trend using UNION for efficiency
+        // Note: Charts usually stay global or respond to project filter only
         $monthlyTrend = $this->db->fetchAll(
             "SELECT month, SUM(income) as income, SUM(expense) as expense FROM (
                 SELECT DATE_FORMAT(paid_at, '%Y-%m') as month, SUM(paid_amount) as income, 0 as expense
-                FROM invoices WHERE tenant_id = ? AND paid_at BETWEEN ? AND ? GROUP BY month
+                FROM invoices WHERE tenant_id = ? AND paid_at BETWEEN ? AND ? " . ($projectId ? "AND project_id = ?" : "") . " GROUP BY month
                 UNION ALL
                 SELECT DATE_FORMAT(expense_date, '%Y-%m') as month, 0 as income, SUM(amount) as expense
-                FROM expenses WHERE tenant_id = ? AND expense_date BETWEEN ? AND ? AND status = 'approved' GROUP BY month
+                FROM expenses WHERE tenant_id = ? AND expense_date BETWEEN ? AND ? AND status = 'approved' " . ($projectId ? "AND project_id = ?" : "") . " GROUP BY month
                 UNION ALL
                 SELECT DATE_FORMAT(pp.period_end, '%Y-%m') as month, 0 as income, SUM(pr.net_pay) as expense
                 FROM payroll_records pr JOIN payroll_periods pp ON pr.payroll_period_id = pp.id 
                 WHERE pr.tenant_id = ? AND pp.period_end BETWEEN ? AND ? GROUP BY month
             ) combined GROUP BY month ORDER BY month ASC",
-            [$tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd]
+            $projectId 
+                ? [$tenantId, $trendStart, $trendEnd, $projectId, $tenantId, $trendStart, $trendEnd, $projectId, $tenantId, $trendStart, $trendEnd]
+                : [$tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd, $tenantId, $trendStart, $trendEnd]
         );
 
         // 5. Expense Distribution (by category)
         $categories = $this->db->fetchAll(
             "SELECT category, SUM(amount) as total FROM expenses 
-             WHERE tenant_id = ? AND expense_date BETWEEN ? AND ? AND status = 'approved'
+             WHERE {$expenseWhereStr}
              GROUP BY category ORDER BY total DESC",
-            [$tenantId, $startDate, $endDate]
+            $expenseBindings
         );
 
         // Add payroll as a virtual category for distribution
@@ -83,7 +127,6 @@ class CashFlowController extends Controller
                 'category' => 'payroll',
                 'total' => (float)$cashOutPayroll['total']
             ];
-            // Sort again if needed
             usort($categories, fn($a, $b) => $b['total'] <=> $a['total']);
         }
 
@@ -100,6 +143,71 @@ class CashFlowController extends Controller
                 'categories' => $categories
             ]
         ]);
+    }
+
+    /**
+     * Create quick entry (Income/Expense)
+     */
+    public function store(): array
+    {
+        $tenantId = $this->db->getTenantId();
+        $input = $this->getJsonInput();
+        $user = $this->getUser();
+
+        $data = $this->validate([
+            'type' => 'required|in:income,expense',
+            'amount' => 'required|numeric|min:0.01',
+            'date' => 'required|date',
+            'description' => 'required|string',
+            'category' => 'required|string',
+        ]);
+
+        try {
+            if ($data['type'] === 'expense') {
+                $expenseId = $this->db->insert('expenses', [
+                    'tenant_id' => $tenantId,
+                    'user_id' => $user['id'],
+                    'project_id' => $input['project_id'] ?? null,
+                    'category' => $data['category'],
+                    'description' => $data['description'],
+                    'amount' => $data['amount'],
+                    'expense_date' => $data['date'],
+                    'payment_method' => $input['payment_method'] ?? 'cash',
+                    'status' => 'approved', // Auto-approve quick entries from Cash Flow
+                    'vendor' => $input['person'] ?? null
+                ]);
+                return $this->success(['id' => $expenseId, 'type' => 'expense'], 'Saída registrada com sucesso');
+            } else {
+                // For income, we create a simplified invoice + payment
+                $invoiceNumber = 'QUICK-' . date('Ymd-His');
+                $invoiceId = $this->db->insert('invoices', [
+                    'tenant_id' => $tenantId,
+                    'project_id' => $input['project_id'] ?? null,
+                    'invoice_number' => $invoiceNumber,
+                    'issue_date' => $data['date'],
+                    'due_date' => $data['date'],
+                    'total_amount' => $data['amount'],
+                    'paid_amount' => $data['amount'],
+                    'status' => 'paid',
+                    'notes' => $data['description'],
+                    'paid_at' => $data['date'] . ' ' . date('H:i:s')
+                ]);
+
+                $paymentId = $this->db->insert('payments', [
+                    'tenant_id' => $tenantId,
+                    'invoice_id' => $invoiceId,
+                    'amount' => $data['amount'],
+                    'payment_date' => $data['date'],
+                    'payment_method' => $input['payment_method'] ?? 'cash',
+                    'status' => 'completed',
+                    'notes' => $data['description']
+                ]);
+
+                return $this->success(['id' => $paymentId, 'type' => 'income'], 'Entrada registrada com sucesso');
+            }
+        } catch (\Exception $e) {
+            $this->error('Falha ao registrar lançamento: ' . $e->getMessage(), 500);
+        }
     }
 
     /**
