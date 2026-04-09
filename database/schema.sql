@@ -677,7 +677,7 @@ CREATE TABLE `notifications` (
 -- =====================================================
 
 -- Insert default system roles
-INSERT INTO `roles` (`tenant_id`, `name`, `display_name`, `permissions`, `is_system`) VALUES
+INSERT IGNORE INTO `roles` (`tenant_id`, `name`, `display_name`, `permissions`, `is_system`) VALUES
 (NULL, 'admin', 'Administrator', '["*"]', TRUE),
 (NULL, 'project_manager', 'Project Manager', '["projects.*", "clients.*", "tasks.*", "time_logs.*", "budgets.*", "expenses.view", "invoices.view", "documents.*", "reports.view"]', TRUE),
 (NULL, 'accountant', 'Accountant', '["invoices.*", "payments.*", "expenses.*", "budgets.*", "payroll.*", "reports.*", "clients.view", "projects.view"]', TRUE),

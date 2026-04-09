@@ -11,11 +11,11 @@ SET NAMES 'utf8mb4';
 -- =====================================================
 
 -- Create demo tenant
-INSERT INTO `tenants` (`id`, `name`, `subdomain`, `email`, `phone`, `address`, `city`, `state`, `zip_code`, `status`, `plan`) VALUES
+INSERT IGNORE INTO `tenants` (`id`, `name`, `subdomain`, `email`, `phone`, `address`, `city`, `state`, `zip_code`, `status`, `plan`) VALUES
 (1, 'Acme Construction Co.', 'acme', 'admin@acmeconstruction.com', '(555) 123-4567', '123 Builder Lane', 'Austin', 'TX', '78701', 'active', 'professional');
 
 -- Create demo users (password is 'password123' hashed with bcrypt)
-INSERT INTO `users` (`id`, `tenant_id`, `role_id`, `first_name`, `last_name`, `email`, `password`, `phone`, `status`) VALUES
+INSERT IGNORE INTO `users` (`id`, `tenant_id`, `role_id`, `first_name`, `last_name`, `email`, `password`, `phone`, `status`) VALUES
 (1, 1, 1, 'John', 'Admin', 'admin@acmeconstruction.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '(555) 123-4567', 'active'),
 (2, 1, 2, 'Sarah', 'Manager', 'sarah@acmeconstruction.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '(555) 234-5678', 'active'),
 (3, 1, 3, 'Mike', 'Accountant', 'mike@acmeconstruction.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '(555) 345-6789', 'active'),
@@ -25,7 +25,7 @@ INSERT INTO `users` (`id`, `tenant_id`, `role_id`, `first_name`, `last_name`, `e
 -- CLIENTS
 -- =====================================================
 
-INSERT INTO `clients` (`id`, `tenant_id`, `name`, `type`, `contact_person`, `email`, `phone`, `address`, `city`, `state`, `zip_code`, `industry`, `payment_terms`, `status`) VALUES
+INSERT IGNORE INTO `clients` (`id`, `tenant_id`, `name`, `type`, `contact_person`, `email`, `phone`, `address`, `city`, `state`, `zip_code`, `industry`, `payment_terms`, `status`) VALUES
 (1, 1, 'Sunrise Properties LLC', 'company', 'David Wilson', 'david@sunriseprops.com', '(555) 111-2222', '456 Real Estate Blvd', 'Austin', 'TX', '78702', 'Real Estate', 30, 'active'),
 (2, 1, 'TechPark Developments', 'company', 'Lisa Chen', 'lisa@techpark.dev', '(555) 222-3333', '789 Innovation Dr', 'Austin', 'TX', '78703', 'Technology', 45, 'active'),
 (3, 1, 'City of Austin - Parks Dept', 'government', 'James Brown', 'jbrown@austintx.gov', '(555) 333-4444', '100 City Hall Plaza', 'Austin', 'TX', '78704', 'Government', 60, 'active'),
@@ -35,7 +35,7 @@ INSERT INTO `clients` (`id`, `tenant_id`, `name`, `type`, `contact_person`, `ema
 -- PROJECTS
 -- =====================================================
 
-INSERT INTO `projects` (`id`, `tenant_id`, `client_id`, `manager_id`, `name`, `description`, `code`, `address`, `city`, `state`, `start_date`, `end_date`, `contract_value`, `status`, `priority`, `progress`) VALUES
+INSERT IGNORE INTO `projects` (`id`, `tenant_id`, `client_id`, `manager_id`, `name`, `description`, `code`, `address`, `city`, `state`, `start_date`, `end_date`, `contract_value`, `status`, `priority`, `progress`) VALUES
 (1, 1, 1, 2, 'Sunrise Office Complex', 'Three-story office building with underground parking', 'PRJ-2024-001', '1000 Business Park Dr', 'Austin', 'TX', '2024-01-15', '2024-12-31', 2500000.00, 'in_progress', 'high', 65),
 (2, 1, 2, 2, 'TechPark Data Center', 'State-of-the-art data center facility with cooling systems', 'PRJ-2024-002', '500 Server Farm Rd', 'Austin', 'TX', '2024-03-01', '2025-02-28', 5000000.00, 'in_progress', 'urgent', 40),
 (3, 1, 3, 2, 'Zilker Park Pavilion', 'Public pavilion and restroom facilities renovation', 'PRJ-2024-003', 'Zilker Park', 'Austin', 'TX', '2024-06-01', '2024-10-31', 750000.00, 'in_progress', 'medium', 80),

@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS subscription_plans (
 -- -----------------------------------------------------
 -- Insert default subscription plans
 -- -----------------------------------------------------
-INSERT INTO subscription_plans (name, slug, description, price_monthly, user_limit, features, is_popular, sort_order) VALUES
+INSERT IGNORE INTO subscription_plans (name, slug, description, price_monthly, user_limit, features, is_popular, sort_order) VALUES
 (
     'Team',
     'team',
@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS pending_signups (
 -- -----------------------------------------------------
 -- Add extra seat pricing (metered billing)
 -- -----------------------------------------------------
-INSERT INTO subscription_plans (name, slug, description, price_monthly, user_limit, features, sort_order, status) VALUES
+INSERT IGNORE INTO subscription_plans (name, slug, description, price_monthly, user_limit, features, sort_order, status) VALUES
 (
     'Additional User Seat',
     'extra-seat',

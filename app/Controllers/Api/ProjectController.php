@@ -61,7 +61,15 @@ class ProjectController extends Controller
                 (SELECT COALESCE(SUM(budgeted_amount), 0) FROM budgets WHERE project_id = p.id) as total_budget,
                 (SELECT COALESCE(SUM(spent_amount), 0) FROM budgets WHERE project_id = p.id) as total_spent,
                 (SELECT COALESCE(SUM(paid_amount), 0) FROM invoices WHERE project_id = p.id AND status != 'cancelled') as total_income,
-                (SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE project_id = p.id AND status = 'approved') as total_expenses
+                (SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE project_id = p.id AND status = 'approved') as total_expenses,
+                (SELECT COALESCE(SUM(
+                    CASE e.payment_type
+                        WHEN 'hourly' THEN tl.hours * e.hourly_rate * CASE WHEN tl.is_overtime THEN COALESCE(e.overtime_multiplier, 1.5) ELSE 1 END
+                        WHEN 'daily' THEN (tl.hours / 8) * e.daily_rate
+                        WHEN 'salary' THEN (tl.hours / 160) * e.salary
+                        ELSE 0
+                    END
+                ), 0) FROM time_logs tl JOIN employees e ON tl.employee_id = e.id WHERE tl.project_id = p.id) as total_labor_cost
              FROM projects p
              LEFT JOIN clients c ON p.client_id = c.id
              LEFT JOIN users u ON p.manager_id = u.id
@@ -75,10 +83,14 @@ class ProjectController extends Controller
         foreach ($projects as &$project) {
             $income = (float) $project['total_income'];
             $expenses = (float) $project['total_expenses'];
+            $laborCost = (float) ($project['total_labor_cost'] ?? 0);
             $budget = (float) $project['total_budget'];
-            $spent = (float) $project['total_spent'];
+            
+            // Actual spent = Approved Expenses + Labor Cost from Time Logs
+            $spent = $expenses + $laborCost;
+            $project['total_spent'] = $spent;
 
-            $project['profit'] = $income - $expenses;
+            $project['profit'] = $income - $spent;
             $project['profit_margin'] = $income > 0 ? round(($project['profit'] / $income) * 100, 1) : 0;
 
             // Health status based on budget utilization
@@ -194,13 +206,30 @@ class ProjectController extends Controller
             [$id]
         );
 
+        // Get actual labor cost (payroll)
+        $labor = $this->db->fetch(
+            "SELECT COALESCE(SUM(
+                CASE e.payment_type
+                    WHEN 'hourly' THEN tl.hours * e.hourly_rate * CASE WHEN tl.is_overtime THEN COALESCE(e.overtime_multiplier, 1.5) ELSE 1 END
+                    WHEN 'daily' THEN (tl.hours / 8) * e.daily_rate
+                    WHEN 'salary' THEN (tl.hours / 160) * e.salary
+                    ELSE 0
+                END
+            ), 0) as cost FROM time_logs tl JOIN employees e ON tl.employee_id = e.id WHERE tl.project_id = ?",
+            [$id]
+        );
+
         $project['budget_summary'] = $budget;
         $project['task_summary'] = $tasks;
         $project['hours_logged'] = (float) $hours['total'];
 
         // Add convenience totals for frontend stat cards
         $project['total_budget'] = (float) ($budget['total_budget'] ?? 0);
-        $project['total_spent'] = (float) ($expenses['total'] ?? 0); // Use actual expenses, not budget spent
+        
+        // Actual spent = Approved Expenses + Labor Cost from Time Logs
+        $actualExpenses = (float) ($expenses['total'] ?? 0);
+        $actualLabor = (float) ($labor['cost'] ?? 0);
+        $project['total_spent'] = $actualExpenses + $actualLabor;
 
         // Calculate progress based on project status
         $statusProgress = [
@@ -563,7 +592,7 @@ class ProjectController extends Controller
         }
 
         // === PROFITABILITY ===
-        $totalCost = $totalExpenses + $laborCost;
+        $totalCost = $totalExpenses + $laborCostFromTimeLogs;
         $grossProfit = $income['paid'] - $totalCost;
         $profitMargin = $income['paid'] > 0
             ? round(($grossProfit / $income['paid']) * 100, 1)
@@ -675,7 +704,7 @@ class ProjectController extends Controller
         $startDate = $_GET['start_date'] ?? null;
         $endDate = $_GET['end_date'] ?? null;
         $page = max(1, (int) ($_GET['page'] ?? 1));
-        $perPage = min(100, max(10, (int) ($_GET['per_page'] ?? 25)));
+        $perPage = min(5000, max(10, (int) ($_GET['per_page'] ?? 25)));
         $offset = ($page - 1) * $perPage;
 
         $transactions = [];

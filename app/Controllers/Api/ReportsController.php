@@ -118,22 +118,29 @@ class ReportsController extends Controller
             "SELECT 
                 p.*,
                 c.name as client_name,
-                COALESCE(SUM(b.budgeted_amount), 0) as total_budget,
-                COALESCE(SUM(b.spent_amount), 0) as total_spent,
+                (SELECT COALESCE(SUM(budgeted_amount), 0) FROM budgets WHERE project_id = p.id) as total_budget,
+                (SELECT COALESCE(SUM(amount), 0) FROM expenses WHERE project_id = p.id AND status = 'approved') as actual_expenses,
+                (SELECT COALESCE(SUM(
+                    CASE e.payment_type
+                        WHEN 'hourly' THEN tl.hours * e.hourly_rate * CASE WHEN tl.is_overtime THEN COALESCE(e.overtime_multiplier, 1.5) ELSE 1 END
+                        WHEN 'daily' THEN (tl.hours / 8) * e.daily_rate
+                        WHEN 'salary' THEN (tl.hours / 160) * e.salary
+                        ELSE 0
+                    END
+                ), 0) FROM time_logs tl JOIN employees e ON tl.employee_id = e.id WHERE tl.project_id = p.id) as total_labor_cost,
                 (SELECT COALESCE(SUM(hours), 0) FROM time_logs WHERE project_id = p.id) as hours_logged,
                 (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as total_tasks,
                 (SELECT COUNT(*) FROM tasks WHERE project_id = p.id AND status = 'completed') as completed_tasks
              FROM projects p
              LEFT JOIN clients c ON p.client_id = c.id
-             LEFT JOIN budgets b ON b.project_id = p.id
              WHERE {$where}
-             GROUP BY p.id
              ORDER BY p.created_at DESC",
             $bindings
         );
 
-        // Calculate profitability
+        // Calculate profitability and health
         foreach ($projects as &$project) {
+            $project['total_spent'] = (float)$project['actual_expenses'] + (float)$project['total_labor_cost'];
             $project['budget_remaining'] = $project['total_budget'] - $project['total_spent'];
             $project['budget_utilization'] = $project['total_budget'] > 0
                 ? round(($project['total_spent'] / $project['total_budget']) * 100, 1)
@@ -304,6 +311,10 @@ class ReportsController extends Controller
                 break;
             case 'time':
                 $data = $this->timeTracking()['data'];
+                break;
+            case 'cash-flow':
+                $cf = new CashFlowController();
+                $data = $cf->transactions()['data']['transactions'];
                 break;
             default:
                 $this->error('Invalid report type', 422);

@@ -37,6 +37,13 @@ if (isset($_GET['debug_payment']) && $_GET['debug_payment'] === 'check') {
 // Use global router from index.php
 $router = $GLOBALS['app_router'];
 
+/*
+// DATABASE SYNC ROUTE (Commented out for security after use)
+$router->get('/api/sync-export', function () {
+    // ...
+});
+*/
+
 // DEBUG ROUTE (Global) - Self-contained, doesn't throw exceptions
 $router->get('/debug-autoload', function () {
     try {
@@ -208,6 +215,8 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
     $router->get('/projects/{id}/financials', 'Api\\ProjectController@financials');
     $router->get('/projects/{id}/ledger', 'Api\\ProjectController@ledger');
     $router->post('/projects/{id}/payments', 'PaymentController@storeProjectPayment');
+    $router->put('/payments/{id}', 'PaymentController@update');
+    $router->delete('/payments/{id}', 'PaymentController@destroy');
 
     // Tasks
     $router->get('/tasks', 'Api\\TaskController@index');
@@ -476,9 +485,13 @@ $router->group(['prefix' => 'api', 'middleware' => ['AuthMiddleware', 'TenantMid
     $router->get('/reports/export', 'Api\\ReportsController@export');
 
     // Financial Reports (Trial Balance, Income Statement, Balance Sheet)
-    $router->get('/reports/trial-balance', 'Api\\FinancialReportsController@trialBalance');
-    $router->get('/reports/income-statement', 'Api\\FinancialReportsController@incomeStatement');
-    $router->get('/reports/balance-sheet', 'Api\\FinancialReportsController@balanceSheet');
+    $router->get('/financial-reports/trial-balance', 'Api\\FinancialReportsController@trialBalance');
+    $router->get('/financial-reports/income-statement', 'Api\\FinancialReportsController@incomeStatement');
+    $router->get('/financial-reports/balance-sheet', 'Api\\FinancialReportsController@balanceSheet');
+
+    // Cash Flow (Fluxo de Caixa)
+    $router->get('/cash-flow/summary', 'Api\\CashFlowController@summary');
+    $router->get('/cash-flow/transactions', 'Api\\CashFlowController@transactions');
 
     // User Invitations (Admin only)
     $router->get('/invitations', 'Api\\InvitationController@index');

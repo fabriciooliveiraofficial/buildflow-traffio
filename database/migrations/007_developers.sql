@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS developers (
 
 -- Insert default admin developer
 -- Password: "admin123" (you should change this immediately!)
-INSERT INTO developers (email, password, name, role) VALUES (
+INSERT IGNORE INTO developers (email, password, name, role) VALUES (
     'admin@buildflow.dev',
     '$2y$10$LhKwNZQ5r5ERPMoQJbPy4uWwXH/Hn4L4WvJq.Kz.YHwZtZRfnQyOm',
     'Admin Developer',

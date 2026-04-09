@@ -296,6 +296,12 @@ $router->get('/t/{tenant}/financial-reports', function ($tenant) {
     return require VIEWS_PATH . '/finance/reports.php';
 });
 
+// Cash Flow (Fluxo de Caixa)
+$router->get('/t/{tenant}/cash-flow', function ($tenant) {
+    $GLOBALS['tenant_slug'] = $tenant;
+    return require VIEWS_PATH . '/finance/cash-flow.php';
+});
+
 $router->get('/t/{tenant}/clients/{id}', function ($tenant, $id) {
     $GLOBALS['tenant_slug'] = $tenant;
     $GLOBALS['params'] = ['id' => $id];
