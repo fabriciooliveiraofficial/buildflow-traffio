@@ -1,7 +1,7 @@
 <?php
 /**
  * Main Application Layout
- * BUILD_VERSION: 1.1.3
+ * BUILD_VERSION: 1.1.4
  * QuickBooks-style sidebar navigation with responsive design
  */
 
@@ -148,6 +148,41 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
 
 <body>
     <div class="app-container">
+        <!-- Diagnostic Probe (v1.1.4) -->
+        <script>
+        (function() {
+            window.addEventListener('load', function() {
+                const sidebar = document.getElementById('sidebar');
+                const state = {
+                    found: !!sidebar,
+                    cashFlowItem: null,
+                    html: sidebar ? sidebar.innerHTML.substring(0, 1000) : 'not found',
+                    location: window.location.href,
+                    version: '1.1.4'
+                };
+
+                if (sidebar) {
+                    const cfLink = sidebar.querySelector('a[href*="/cash-flow"]');
+                    if (cfLink) {
+                        state.cashFlowItem = {
+                            text: cfLink.textContent.trim(),
+                            parentSection: cfLink.closest('.nav-section')?.querySelector('.nav-section-title')?.textContent.trim()
+                        };
+                    }
+                }
+
+                fetch('/api/debug/log', {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        level: 'DEBUG',
+                        message: 'UI State Probe',
+                        context: state
+                    })
+                }).catch(e => console.error('Probe failed', e));
+            });
+        })();
+        </script>
+
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
@@ -507,7 +542,7 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <div class="modal-backdrop"></div>
 
     <!-- Scripts -->
-    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.3"></script>
+    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.4"></script>
     <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
     <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
     <script>

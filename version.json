@@ -1,10 +1,23 @@
 {
-    "version": "1.1.3",
+    "version": "1.1.4",
     "build": "20260409",
-    "name": "Cash Flow Release",
+    "name": "Diagnostic Release",
     "releaseDate": "2026-04-09",
     "minSupportedVersion": "1.0.0",
     "changelog": [
+        {
+            "version": "1.1.4",
+            "date": "2026-04-09",
+            "features": [
+                "Diagnostic Monitoring Probe",
+                "Remote Debugging API",
+                "Web-based Log Viewer"
+            ],
+            "fixes": [
+                "Root cause detection for sidebar regressions"
+            ],
+            "improvements": []
+        },
         {
             "version": "1.1.3",
             "date": "2026-04-09",
@@ -16,43 +29,8 @@
                 "Guaranteed sidebar persistence across all sessions"
             ],
             "improvements": []
-        },
-        {
-            "version": "1.1.2",
-            "date": "2026-04-09",
-            "features": [
-                "Permanent sidebar positioning for Cash Flow",
-                "Full English translation of Cash Flow module"
-            ],
-            "fixes": [
-                "Fixed sidebar reverting to old position on page refresh",
-                "Improved cache invalidation strategy"
-            ],
-            "improvements": []
-        },
-        {
-            "version": "1.1.0",
-            "date": "2026-04-09",
-            "features": [
-                "Finalizado módulo de Cash Flow com filtros dinâmicos por projeto e busca",
-                "Adicionado modal de Novo Lançamento (Rápido) para receitas e despesas",
-                "Implementada exportação para CSV filtrada"
-            ],
-            "fixes": [
-                "Corrigida persistência do layout e nomeação na barra lateral"
-            ],
-            "improvements": []
-        },
-        {
-            "version": "1.0.1",
-            "date": "2025-12-12",
-            "features": [
-                "Bug fixes and improvements"
-            ],
-            "fixes": [],
-            "improvements": []
         }
     ],
-    "forceUpdate": false,
-    "forceUpdateMessage": null
+    "forceUpdate": true,
+    "forceUpdateMessage": "Diagnostic Update v1.1.4. Please refresh to activate monitoring probes."
 }

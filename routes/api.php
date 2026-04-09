@@ -584,3 +584,27 @@ $router->post('/api/dev/releases/{id}/publish', 'Api\\VersionController@publish'
 $router->delete('/api/dev/releases/{id}', 'Api\\VersionController@destroy');
 
 
+
+// =====================================================
+// Remote Diagnostic Logging (v1.1.4)
+// =====================================================
+$router->post('/api/debug/log', function() {
+    $input = file_get_contents('php://input');
+    $data = json_decode($input, true);
+    
+    if (!$data) {
+        $data = ['raw' => $input];
+    }
+    
+    $level = $data['level'] ?? 'INFO';
+    $message = $data['message'] ?? 'No message';
+    $context = $data['context'] ?? [];
+    $context['ip'] = $_SERVER['REMOTE_ADDR'];
+    $context['user_agent'] = $_SERVER['HTTP_USER_AGENT'];
+    
+    \App\Core\Logger::log($message, $level, $context);
+    
+    header('Content-Type: application/json');
+    echo json_encode(['success' => true]);
+    exit;
+});

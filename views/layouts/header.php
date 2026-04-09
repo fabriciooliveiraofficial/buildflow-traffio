@@ -48,7 +48,21 @@ $title = $pageTitle ?? 'Dashboard';
 </head>
 
 <body>
-    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.3"></script>
+    <script src="<?= $basePath ?>/assets/js/app.js?v=1.1.4"></script>
+    <script>
+    (function() {
+        window.addEventListener('load', function() {
+            const sidebar = document.getElementById('sidebar');
+            const state = {
+                found: !!sidebar,
+                source: 'header.php',
+                html: sidebar ? sidebar.innerHTML.substring(0, 1000) : 'not found',
+                version: '1.1.4'
+            };
+            fetch('/api/debug/log', { method: 'POST', body: JSON.stringify({ level: 'DEBUG', message: 'UI State Probe (Header)', context: state }) }).catch(e => {});
+        });
+    })();
+    </script>
         <!-- Sidebar Overlay (Mobile) -->
         <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
