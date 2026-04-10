@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $title = 'Project Details';
 $page = 'projects';
 
@@ -175,7 +175,7 @@ ob_start();
             <div class="stat-label">Burn Rate</div>
         </div>
         <div class="card stat-card">
-            <div id="fin-health-indicator" class="stat-value">â—</div>
+            <div id="fin-health-indicator" class="stat-value">●</div>
             <div class="stat-label">Health Status</div>
         </div>
     </div>
@@ -342,7 +342,7 @@ ob_start();
 <div class="modal" id="quick-expense-modal">
     <div class="modal-header">
         <h3 class="modal-title">Add Project Expense</h3>
-        <button class="modal-close" onclick="Modal.close('quick-expense-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('quick-expense-modal')">×</button>
     </div>
     <form id="quick-expense-form">
         <div class="modal-body">
@@ -508,7 +508,7 @@ ob_start();
 <div class="modal" id="budget-modal">
     <div class="modal-header">
         <h3 class="modal-title">Add Budget Item</h3>
-        <button class="modal-close" onclick="Modal.close('budget-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('budget-modal')">×</button>
     </div>
     <form id="budget-form">
         <div class="modal-body">
@@ -546,7 +546,7 @@ ob_start();
 <div class="modal" id="income-modal">
     <div class="modal-header">
         <h3 class="modal-title">Record Project Income</h3>
-        <button class="modal-close" onclick="Modal.close('income-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('income-modal')">×</button>
     </div>
     <form id="income-form">
         <div class="modal-body">
@@ -619,7 +619,7 @@ ob_start();
 <div class="modal" id="edit-income-modal">
     <div class="modal-header">
         <h3 class="modal-title">Edit Income</h3>
-        <button class="modal-close" onclick="Modal.close('edit-income-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('edit-income-modal')">×</button>
     </div>
     <form id="edit-income-form">
         <input type="hidden" id="edit-income-id">
@@ -648,7 +648,7 @@ ob_start();
 <div class="modal" id="edit-expense-modal">
     <div class="modal-header">
         <h3 class="modal-title">Edit Expense</h3>
-        <button class="modal-close" onclick="Modal.close('edit-expense-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('edit-expense-modal')">×</button>
     </div>
     <form id="edit-expense-form">
         <input type="hidden" id="edit-expense-id">
@@ -933,7 +933,7 @@ ob_start();
 <div class="modal" id="task-modal" style="max-width: 500px;">
     <div class="modal-header">
         <h3 class="modal-title">Add Task</h3>
-        <button class="modal-close" onclick="Modal.close('task-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('task-modal')">×</button>
     </div>
     <form id="task-form">
         <div class="modal-body">
@@ -972,7 +972,7 @@ ob_start();
 <div class="modal" id="timelog-modal" style="max-width: 500px;">
     <div class="modal-header">
         <h3 class="modal-title">Log Time</h3>
-        <button class="modal-close" onclick="Modal.close('timelog-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('timelog-modal')">×</button>
     </div>
     <form id="timelog-form">
         <div class="modal-body">
@@ -1007,7 +1007,7 @@ ob_start();
 <div class="modal" id="edit-timelog-modal" style="max-width: 500px;">
     <div class="modal-header">
         <h3 class="modal-title">Edit Time Log</h3>
-        <button class="modal-close" onclick="Modal.close('edit-timelog-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('edit-timelog-modal')">×</button>
     </div>
     <form id="edit-timelog-form">
         <input type="hidden" id="edit-timelog-id">
@@ -1043,7 +1043,7 @@ ob_start();
 <div class="modal" id="upload-modal" style="max-width: 500px;">
     <div class="modal-header">
         <h3 class="modal-title">Upload Document</h3>
-        <button class="modal-close" onclick="Modal.close('upload-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('upload-modal')">×</button>
     </div>
     <form id="upload-form" enctype="multipart/form-data">
         <div class="modal-body">
@@ -1071,7 +1071,7 @@ ob_start();
 <div class="modal" id="edit-modal">
     <div class="modal-header">
         <h3 class="modal-title">Edit Project</h3>
-        <button class="modal-close" onclick="Modal.close('edit-modal')">Ã—</button>
+        <button class="modal-close" onclick="Modal.close('edit-modal')">×</button>
     </div>
     <form id="edit-project-form">
         <div class="modal-body">
@@ -1160,5 +1160,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require VIEWS_PATH . '/layouts/main.php';
+require VIEWS_PATH . '/layouts/main_v114.php';
 ?>

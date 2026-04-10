@@ -212,11 +212,11 @@ ob_start();
     </div>
 </div>
 
-<!-- Chart.js CDN (Checking if already included in layouts/main.php typically happens via global scripts, but adding here just in case or for explicit dependency) -->
+<!-- Chart.js CDN (Checking if already included in layouts/main_v114.php typically happens via global scripts, but adding here just in case or for explicit dependency) -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="/assets/js/cash-flow.js"></script>
 
 <?php
 $content = ob_get_clean();
-require VIEWS_PATH . '/layouts/main.php';
+require VIEWS_PATH . '/layouts/main_v114.php';
 ?>

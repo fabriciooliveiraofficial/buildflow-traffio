@@ -600,5 +600,5 @@ ob_start();
 
 <?php
 $content = ob_get_clean();
-require VIEWS_PATH . '/layouts/main.php';
+require VIEWS_PATH . '/layouts/main_v114.php';
 ?>
