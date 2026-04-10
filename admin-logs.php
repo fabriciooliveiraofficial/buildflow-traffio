@@ -29,15 +29,31 @@ header('Content-Type: text/html; charset=utf-8');
     <div class="header">
         <h1>Diagnostic Logs v1.1.4</h1>
         <div>
+            <form method="POST" style="display:inline;">
+                <input type="hidden" name="action" value="test_write">
+                <button type="submit" class="btn" style="background: #6a9955;">Test Write</button>
+            </form>
             <a href="/admin-logs.php" class="btn">Refresh</a>
             <a href="/clear-site-cache.php" class="btn" style="background: #ce9178;">Clear Cache</a>
-            <a href="/dashboard" class="btn" style="background: #6a9955;">Dashboard</a>
+            <a href="/dashboard" class="btn" style="background: #569cd6;">Dashboard</a>
         </div>
     </div>
 
     <div id="log-container">
         <?php
         $logFile = ROOT_PATH . '/storage/logs/app.log';
+        
+        // Handle Test Write
+        if (isset($_POST['action']) && $_POST['action'] === 'test_write') {
+            $testMsg = "[" . date('Y-m-d H:i:s') . "] [INFO] Manual Test Write from Admin-Logs\n";
+            $res = file_put_contents($logFile, $testMsg, FILE_APPEND);
+            if ($res === false) {
+                echo "<p style='color: red; padding: 10px; border: 1px solid red;'>❌ WRITE FAILED! Check permissions of " . dirname($logFile) . "</p>";
+            } else {
+                echo "<p style='color: green; padding: 10px; border: 1px solid green;'>✅ WRITE SUCCESSFUL! $res bytes written.</p>";
+            }
+        }
+
         if (file_exists($logFile)) {
             $lines = file($logFile);
             $lines = array_reverse($lines); // Latest first
