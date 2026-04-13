@@ -542,7 +542,7 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <div class="modal-backdrop"></div>
 
     <!-- Scripts -->
-    <script src="<?= $basePath ?>/assets/js/app_v114.js?v=1.1.4"></script>
+    <script src="/assets/js/app_v114.js?v=1.1.4"></script>
     <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
     <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
     <script>
