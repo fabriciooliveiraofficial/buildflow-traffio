@@ -1,9 +1,11 @@
 <?php
 /**
  * Main Application Layout
- * BUILD_VERSION: 1.1.4
+ * BUILD_VERSION: 1.1.5
  * QuickBooks-style sidebar navigation with responsive design
  */
+
+error_log("Rendering main_v114.php v1.1.5 - URI: " . $_SERVER['REQUEST_URI']);
 
 // Get tenant slug from URL path
 $tenantSlug = $GLOBALS['tenant_slug'] ?? \App\Core\Tenant::getSlugFromPath() ?? '';
@@ -158,7 +160,7 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
                     cashFlowItem: null,
                     html: sidebar ? sidebar.innerHTML.substring(0, 1000) : 'not found',
                     location: window.location.href,
-                    version: '1.1.4'
+                    version: '1.1.5'
                 };
 
                 if (sidebar) {
@@ -542,7 +544,7 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <div class="modal-backdrop"></div>
 
     <!-- Scripts -->
-    <script src="/assets/js/app_v114.js?v=1.1.4"></script>
+    <script src="/assets/js/app_v114.js?v=<?= time() ?>"></script>
     <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
     <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
     <script>

@@ -1,9 +1,11 @@
-<?php
 /**
  * Main Application Layout
- * BUILD_VERSION: 1.1.4
+ * BUILD_VERSION: 1.1.5
  * QuickBooks-style sidebar navigation with responsive design
  */
+
+error_log("Rendering main.php v1.1.5 - URI: " . $_SERVER['REQUEST_URI']);
+
 
 // Get tenant slug from URL path
 $tenantSlug = $GLOBALS['tenant_slug'] ?? \App\Core\Tenant::getSlugFromPath() ?? '';
@@ -33,6 +35,8 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <!-- PWA Icons - Using inline SVG -->
     <link rel="icon" type="image/svg+xml"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%232196f3' width='100' height='100' rx='15'/><text x='50' y='65' text-anchor='middle' fill='white' font-size='50' font-weight='bold'>B</text></svg>">
+    <!-- BUILD_VERSION: 1.1.5 -->
+
     <link rel="apple-touch-icon"
         href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%232196f3' width='180' height='180' rx='27'/><text x='90' y='118' text-anchor='middle' fill='white' font-size='98' font-weight='bold'>B</text></svg>">
 
@@ -542,7 +546,8 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <div class="modal-backdrop"></div>
 
     <!-- Scripts -->
-    <script src="/assets/js/app.js?v=1.1.4"></script>
+    <!-- BUILD_VERSION: 1.1.5 -->
+    <script src="/assets/js/app_v114.js?v=<?= time() ?>"></script>
     <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
     <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
     <script>

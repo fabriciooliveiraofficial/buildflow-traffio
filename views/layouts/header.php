@@ -48,7 +48,7 @@ $title = $pageTitle ?? 'Dashboard';
 </head>
 
 <body>
-    <script src="/assets/js/app.js?v=1.1.4"></script>
+    <script src="/assets/js/app.js?v=<?= time() ?>"></script>
     <script>
     (function() {
         window.addEventListener('load', function() {

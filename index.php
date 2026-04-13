@@ -72,7 +72,7 @@ if (file_exists($envFile)) {
 
 // Define app constants
 define('APP_NAME', getenv('APP_NAME') ?: 'Construction ERP');
-define('APP_VERSION', '1.0.0');
+define('APP_VERSION', '1.1.5');
 define('APP_ENV', getenv('APP_ENV') ?: 'production');
 define('APP_DEBUG', true); // TEMPORARILY FORCED TO TRUE FOR DEBUGGING
 define('APP_URL', getenv('APP_URL') ?: 'https://' . $_SERVER['HTTP_HOST']);
