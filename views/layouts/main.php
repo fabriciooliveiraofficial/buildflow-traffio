@@ -1,3 +1,4 @@
+<?php
 /**
  * Main Application Layout
  * BUILD_VERSION: 1.1.5
