@@ -5,9 +5,9 @@
  * Version-controlled for easy updates.
  */
 
-const CACHE_VERSION = 'v1.1.4';
-const CACHE_NAME = 'buildflow-cache-v1.1.4';
-const VERSION = '1.1.4';
+const CACHE_VERSION = 'v1.1.5';
+const CACHE_NAME = 'buildflow-cache-v1.1.5';
+const VERSION = '1.1.5';
 const STATIC_CACHE = `buildflow-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `buildflow-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `buildflow-api-${CACHE_VERSION}`;
@@ -17,7 +17,7 @@ const PRECACHE_ASSETS = [
     '/',
     '/offline.html',
     '/assets/css/main.css',
-    '/assets/js/app.js',
+    '/assets/js/app_v114.js',
     '/assets/js/notifications.js',
     '/assets/js/update-service.js'
 ];
