@@ -248,21 +248,72 @@ ob_start();
                     </select>
                 </div>
                 <div class="flex items-center gap-2">
+                    <style>
+                        .category-option-item:hover {
+                            background-color: var(--gray-100);
+                        }
+                    </style>
                     <label class="text-sm text-muted">Category:</label>
-                    <select class="form-select form-select-sm" id="ledger-category-filter" onchange="loadLedger()"
-                        style="width: 150px;">
-                        <option value="">All Categories</option>
-                        <option value="materials">Materials</option>
-                        <option value="labor">Labor</option>
-                        <option value="subcontractor">Subcontractor</option>
-                        <option value="equipment">Equipment Rental</option>
-                        <option value="fuel">Fuel & Transportation</option>
-                        <option value="permits">Permits & Fees</option>
-                        <option value="utilities">Utilities</option>
-                        <option value="meals">Meals & Per Diem</option>
-                        <option value="other">Other</option>
-                        <option value="Payment">Payment (Income)</option>
-                    </select>
+                    <div class="relative inline-block text-left" id="category-multi-select-container" style="width: 160px;">
+                        <div id="category-multi-select-trigger" class="form-select form-select-sm cursor-pointer flex items-center justify-between" 
+                             onclick="toggleCategoryMultiSelect(event)" 
+                             style="background: var(--input-bg); border: 1px solid var(--input-border); border-radius: var(--radius-lg); font-size: var(--text-sm); color: var(--text-primary); padding: var(--space-2) var(--space-4) var(--space-2) var(--space-3); line-height: 1.5; min-height: 31px; user-select: none;">
+                            <span id="category-multi-select-label" class="truncate" style="max-width: 110px;">All Categories</span>
+                            <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-left: var(--space-1); flex-shrink: 0; color: var(--text-tertiary);">
+                                <path d="M1 1L5 5L9 1" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <div id="category-multi-select-options" class="absolute z-50 hidden mt-1 w-full bg-primary border rounded-lg shadow-lg" 
+                             style="background: var(--bg-primary); border: 1px solid var(--input-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg); max-height: 250px; overflow-y: auto; padding: var(--space-2) 0;">
+                            
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleAllCategories(event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" id="cat-select-all" class="mr-2 cursor-pointer" checked onclick="event.stopPropagation(); onAllCategoriesChange();">
+                                <label for="cat-select-all" class="cursor-pointer font-semibold select-none flex-grow" onclick="event.stopPropagation()">All Categories</label>
+                            </div>
+                            <div style="border-bottom: 1px solid var(--input-border); margin: var(--space-1) 0;"></div>
+                            
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="materials" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Materials</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="labor" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Labor</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="subcontractor" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Subcontractor</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="equipment" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Equipment Rental</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="fuel" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Fuel & Transportation</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="permits" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Permits & Fees</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="utilities" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Utilities</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="meals" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Meals & Per Diem</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="other" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Other</label>
+                            </div>
+                            <div class="category-option-item px-3 py-1 flex items-center cursor-pointer" onclick="toggleCategoryCheckbox(this, event)" style="padding: var(--space-1) var(--space-3); font-size: var(--text-sm);">
+                                <input type="checkbox" name="categories[]" value="Payment" class="mr-2 cursor-pointer" onclick="event.stopPropagation(); onCategoryCheckboxChange();">
+                                <label class="cursor-pointer select-none flex-grow" onclick="event.stopPropagation()">Payment (Income)</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="flex items-center gap-2">
                     <label class="text-sm text-muted">From:</label>

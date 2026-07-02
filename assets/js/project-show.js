@@ -831,8 +831,104 @@ let ledgerPerPage = 25;
 // Smart Search Query State
 let ledgerSearchQuery = '';
 
+// Toggle custom multi-select dropdown
+function toggleCategoryMultiSelect(event) {
+    event.stopPropagation();
+    const options = document.getElementById('category-multi-select-options');
+    if (options) {
+        options.classList.toggle('hidden');
+    }
+}
+
+// Close multi-select dropdown when clicking outside of it
+document.addEventListener('click', function(event) {
+    const container = document.getElementById('category-multi-select-container');
+    const options = document.getElementById('category-multi-select-options');
+    if (container && options && !container.contains(event.target)) {
+        options.classList.add('hidden');
+    }
+});
+
+function toggleAllCategories(event) {
+    event.stopPropagation();
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = !selectAllCheckbox.checked;
+        onAllCategoriesChange();
+    }
+}
+
+function onAllCategoriesChange() {
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    const checkboxes = document.querySelectorAll('input[name="categories[]"]');
+    if (selectAllCheckbox) {
+        checkboxes.forEach(cb => {
+            cb.checked = selectAllCheckbox.checked;
+        });
+    }
+    updateCategoryLabel();
+    loadLedger();
+}
+
+function toggleCategoryCheckbox(element, event) {
+    event.stopPropagation();
+    const cb = element.querySelector('input[type="checkbox"]');
+    if (cb) {
+        cb.checked = !cb.checked;
+        onCategoryCheckboxChange();
+    }
+}
+
+function onCategoryCheckboxChange() {
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    const checkboxes = Array.from(document.querySelectorAll('input[name="categories[]"]'));
+    const allChecked = checkboxes.every(cb => cb.checked);
+    const anyChecked = checkboxes.some(cb => cb.checked);
+
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = allChecked;
+        selectAllCheckbox.indeterminate = anyChecked && !allChecked;
+    }
+    updateCategoryLabel();
+    loadLedger();
+}
+
+function updateCategoryLabel() {
+    const label = document.getElementById('category-multi-select-label');
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    const checkboxes = Array.from(document.querySelectorAll('input[name="categories[]"]'));
+    const checkedBoxes = checkboxes.filter(cb => cb.checked);
+
+    if (!label) return;
+
+    if (selectAllCheckbox && selectAllCheckbox.checked) {
+        label.textContent = 'All Categories';
+    } else if (checkedBoxes.length === 0) {
+        label.textContent = 'None Selected';
+    } else if (checkedBoxes.length === checkboxes.length) {
+        label.textContent = 'All Categories';
+        if (selectAllCheckbox) selectAllCheckbox.checked = true;
+    } else if (checkedBoxes.length === 1) {
+        const text = checkedBoxes[0].nextElementSibling ? checkedBoxes[0].nextElementSibling.textContent : checkedBoxes[0].value;
+        label.textContent = text;
+    } else {
+        label.textContent = checkedBoxes.length + ' Selected';
+    }
+}
+
 async function loadLedger() {
-    const categoryFilter = document.getElementById('ledger-category-filter')?.value || '';
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    const categoryCheckboxes = Array.from(document.querySelectorAll('input[name="categories[]"]'));
+    const checkedCategories = categoryCheckboxes.filter(cb => cb.checked).map(cb => cb.value);
+    
+    let categoryFilter = '';
+    if (selectAllCheckbox && !selectAllCheckbox.checked) {
+        categoryFilter = checkedCategories.join(',');
+        if (checkedCategories.length === 0) {
+            categoryFilter = '__none__';
+        }
+    }
+
     const paymentFilter = document.getElementById('ledger-payment-filter')?.value || '';
     const startDate = document.getElementById('ledger-start-date')?.value || '';
     const endDate = document.getElementById('ledger-end-date')?.value || '';
@@ -872,7 +968,6 @@ async function loadLedger() {
 
 function clearLedgerFilters() {
     document.getElementById('ledger-payment-filter').value = '';
-    document.getElementById('ledger-category-filter').value = '';
     document.getElementById('ledger-start-date').value = '';
     document.getElementById('ledger-end-date').value = '';
     
@@ -882,6 +977,18 @@ function clearLedgerFilters() {
         searchInput.value = '';
     }
     ledgerSearchQuery = '';
+    
+    // Reset custom multi-select categories
+    const selectAllCheckbox = document.getElementById('cat-select-all');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.checked = true;
+        selectAllCheckbox.indeterminate = false;
+    }
+    const checkboxes = document.querySelectorAll('input[name="categories[]"]');
+    checkboxes.forEach(cb => {
+        cb.checked = true;
+    });
+    updateCategoryLabel();
     
     loadLedger();
 }

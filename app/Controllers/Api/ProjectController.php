@@ -707,6 +707,21 @@ class ProjectController extends Controller
         $perPage = min(5000, max(10, (int) ($_GET['per_page'] ?? 25)));
         $offset = ($page - 1) * $perPage;
 
+        $categories = [];
+        $hasPayment = false;
+        $expenseCategories = [];
+
+        if ($category) {
+            $categories = array_map('trim', explode(',', $category));
+            foreach ($categories as $cat) {
+                if (strtolower($cat) === 'payment') {
+                    $hasPayment = true;
+                } else {
+                    $expenseCategories[] = $cat;
+                }
+            }
+        }
+
         $transactions = [];
 
         // Get expenses if type is 'expense' or 'all'
@@ -715,11 +730,14 @@ class ProjectController extends Controller
             $expenseParams = [$id, $tenantId];
 
             if ($category) {
-                if (strtolower($category) === 'payment') {
+                if (empty($expenseCategories)) {
                     $expenseWhere .= " AND 1=0";
                 } else {
-                    $expenseWhere .= " AND e.category = ?";
-                    $expenseParams[] = $category;
+                    $placeholders = implode(',', array_fill(0, count($expenseCategories), '?'));
+                    $expenseWhere .= " AND e.category IN ($placeholders)";
+                    foreach ($expenseCategories as $ecat) {
+                        $expenseParams[] = $ecat;
+                    }
                 }
             }
             if ($paymentMethod) {
@@ -768,7 +786,7 @@ class ProjectController extends Controller
             $incomeParams = [$id, $tenantId];
 
             if ($category) {
-                if (strtolower($category) !== 'payment') {
+                if (!$hasPayment) {
                     $incomeWhere .= " AND 1=0";
                 }
             }
@@ -833,11 +851,14 @@ class ProjectController extends Controller
             $expSumParams = [$id, $tenantId, $startDate];
             
             if ($category) {
-                if (strtolower($category) === 'payment') {
+                if (empty($expenseCategories)) {
                     $expSumWhere .= " AND 1=0";
                 } else {
-                    $expSumWhere .= " AND category = ?";
-                    $expSumParams[] = $category;
+                    $placeholders = implode(',', array_fill(0, count($expenseCategories), '?'));
+                    $expSumWhere .= " AND category IN ($placeholders)";
+                    foreach ($expenseCategories as $ecat) {
+                        $expSumParams[] = $ecat;
+                    }
                 }
             }
             if ($paymentMethod) {
@@ -853,7 +874,7 @@ class ProjectController extends Controller
             $incSumParams = [$id, $tenantId, $startDate];
             
             if ($category) {
-                if (strtolower($category) !== 'payment') {
+                if (!$hasPayment) {
                     $incSumWhere .= " AND 1=0";
                 }
             }
