@@ -828,6 +828,9 @@ let ledgerSortDirection = 'desc';
 let ledgerCurrentPage = 1;
 let ledgerPerPage = 25;
 
+// Smart Search Query State
+let ledgerSearchQuery = '';
+
 async function loadLedger() {
     const categoryFilter = document.getElementById('ledger-category-filter')?.value || '';
     const paymentFilter = document.getElementById('ledger-payment-filter')?.value || '';
@@ -846,6 +849,15 @@ async function loadLedger() {
         if (response.success) {
             ledgerData = response.data;
             
+            // Calculate base balance before the oldest transaction in this batch
+            let baseBalance = 0;
+            if (ledgerData.transactions && ledgerData.transactions.length > 0) {
+                const oldest = ledgerData.transactions[ledgerData.transactions.length - 1];
+                const oldestAmount = oldest.type === 'income' ? oldest.amount : -oldest.amount;
+                baseBalance = (oldest.running_balance || 0) - oldestAmount;
+            }
+            ledgerData.baseBalance = baseBalance;
+            
             // Reset sorting state to default (date DESC) since backend returns it sorted this way
             ledgerSortColumn = 'date';
             ledgerSortDirection = 'desc';
@@ -863,22 +875,86 @@ function clearLedgerFilters() {
     document.getElementById('ledger-category-filter').value = '';
     document.getElementById('ledger-start-date').value = '';
     document.getElementById('ledger-end-date').value = '';
+    
+    // Also reset smart search input and state
+    const searchInput = document.getElementById('ledger-smart-search');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    ledgerSearchQuery = '';
+    
     loadLedger();
 }
 
-function sortLedger(column) {
-    if (!ledgerData || !ledgerData.transactions) return;
-
-    // Toggle direction if same column, otherwise default to ascending (except date defaults to desc)
-    if (ledgerSortColumn === column) {
-        ledgerSortDirection = ledgerSortDirection === 'asc' ? 'desc' : 'asc';
+function applyLedgerSearch() {
+    const input = document.getElementById('ledger-smart-search');
+    if (input) {
+        ledgerSearchQuery = input.value.trim().toLowerCase();
     } else {
-        ledgerSortColumn = column;
-        ledgerSortDirection = column === 'date' ? 'desc' : 'asc';
+        ledgerSearchQuery = '';
+    }
+    ledgerCurrentPage = 1; // Reset pagination to first page
+    renderLedger(ledgerData);
+}
+
+function getProcessedTransactions() {
+    if (!ledgerData || !ledgerData.transactions) return [];
+
+    let list = [...ledgerData.transactions];
+
+    // 1. Filter by text search query
+    if (ledgerSearchQuery) {
+        list = list.filter(t => {
+            const dateStr = formatDate(t.date).toLowerCase();
+            const methodStr = formatPaymentMethod(t.payment_method).toLowerCase();
+            const descStr = (t.description || '').toLowerCase();
+            const catStr = (t.category || '').toLowerCase();
+            const vendorStr = (t.vendor || '').toLowerCase();
+            
+            // Amount and display formats
+            const amountVal = t.amount || 0;
+            const amountStr = amountVal.toString().toLowerCase();
+            const amountFormatted = (t.type === 'income' ? '+' : '-') + formatCurrency(amountVal).toLowerCase();
+            
+            // Running balance
+            const balanceStr = formatCurrency(t.running_balance || 0).toLowerCase();
+
+            return dateStr.includes(ledgerSearchQuery) ||
+                   methodStr.includes(ledgerSearchQuery) ||
+                   descStr.includes(ledgerSearchQuery) ||
+                   catStr.includes(ledgerSearchQuery) ||
+                   vendorStr.includes(ledgerSearchQuery) ||
+                   amountStr.includes(ledgerSearchQuery) ||
+                   amountFormatted.includes(ledgerSearchQuery) ||
+                   balanceStr.includes(ledgerSearchQuery);
+        });
     }
 
-    // Sort the transactions in-place
-    ledgerData.transactions.sort((a, b) => {
+    // 2. Clone to avoid mutating original ledgerData.transactions running balance
+    list = list.map(t => ({ ...t }));
+
+    // 3. Recalculate running balance if filtered
+    // We sort chronologically (oldest first) to compute running balance
+    list.sort((a, b) => {
+        const dateCompare = new Date(a.date) - new Date(b.date);
+        if (dateCompare === 0) {
+            return (a.id || 0) - (b.id || 0);
+        }
+        return dateCompare;
+    });
+
+    let currentBalance = ledgerData.baseBalance || 0;
+    for (let i = 0; i < list.length; i++) {
+        const t = list[i];
+        const amt = t.type === 'income' ? t.amount : -t.amount;
+        currentBalance += amt;
+        t.running_balance = currentBalance;
+    }
+
+    // 4. Sort back to user's desired column sorting
+    const column = ledgerSortColumn;
+    const direction = ledgerSortDirection;
+    list.sort((a, b) => {
         let valA, valB;
 
         switch (column) {
@@ -910,10 +986,24 @@ function sortLedger(column) {
                 return 0;
         }
 
-        if (valA < valB) return ledgerSortDirection === 'asc' ? -1 : 1;
-        if (valA > valB) return ledgerSortDirection === 'asc' ? 1 : -1;
+        if (valA < valB) return direction === 'asc' ? -1 : 1;
+        if (valA > valB) return direction === 'asc' ? 1 : -1;
         return 0;
     });
+
+    return list;
+}
+
+function sortLedger(column) {
+    if (!ledgerData || !ledgerData.transactions) return;
+
+    // Toggle direction if same column, otherwise default to ascending (except date defaults to desc)
+    if (ledgerSortColumn === column) {
+        ledgerSortDirection = ledgerSortDirection === 'asc' ? 'desc' : 'asc';
+    } else {
+        ledgerSortColumn = column;
+        ledgerSortDirection = column === 'date' ? 'desc' : 'asc';
+    }
 
     // Update sort icons
     updateSortIcons(column);
@@ -939,10 +1029,9 @@ function updateSortIcons(activeColumn) {
     });
 }
 
-
 function renderLedger(data) {
     const tbody = document.querySelector('#ledger-table tbody');
-    const allTransactions = data.transactions || [];
+    const allTransactions = getProcessedTransactions();
     const totalCount = allTransactions.length;
 
     if (totalCount === 0) {
@@ -1030,7 +1119,7 @@ function ledgerPrevPage() {
 }
 
 function ledgerNextPage() {
-    const totalPages = Math.ceil((ledgerData?.transactions?.length || 0) / ledgerPerPage);
+    const totalPages = Math.ceil((getProcessedTransactions().length) / ledgerPerPage);
     if (ledgerCurrentPage < totalPages) {
         ledgerCurrentPage++;
         renderLedger(ledgerData);

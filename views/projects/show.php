@@ -276,6 +276,19 @@ ob_start();
                 </div>
                 <button class="btn btn-secondary btn-sm" onclick="clearLedgerFilters()">Clear Filters</button>
             </div>
+            <!-- Smart Search Row -->
+            <div class="flex items-center gap-2" style="max-w-md; margin-top: var(--space-1);">
+                <div style="position: relative; width: 100%;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: var(--space-3); top: 50%; transform: translateY(-50%); color: var(--text-tertiary); pointer-events: none;">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                    <input type="text" class="form-input form-input-sm" id="ledger-smart-search" 
+                           placeholder="Search date, method, description, category, vendor, amount..." 
+                           oninput="applyLedgerSearch()" 
+                           style="padding-left: var(--space-8); width: 100%;">
+                </div>
+            </div>
         </div>
         <div class="table-container">
             <table class="table" id="ledger-table">
