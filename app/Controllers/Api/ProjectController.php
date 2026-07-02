@@ -715,8 +715,12 @@ class ProjectController extends Controller
             $expenseParams = [$id, $tenantId];
 
             if ($category) {
-                $expenseWhere .= " AND e.category = ?";
-                $expenseParams[] = $category;
+                if (strtolower($category) === 'payment') {
+                    $expenseWhere .= " AND 1=0";
+                } else {
+                    $expenseWhere .= " AND e.category = ?";
+                    $expenseParams[] = $category;
+                }
             }
             if ($paymentMethod) {
                 $expenseWhere .= " AND e.payment_method = ?";
@@ -763,6 +767,11 @@ class ProjectController extends Controller
             $incomeWhere = "i.project_id = ? AND i.tenant_id = ?";
             $incomeParams = [$id, $tenantId];
 
+            if ($category) {
+                if (strtolower($category) !== 'payment') {
+                    $incomeWhere .= " AND 1=0";
+                }
+            }
             if ($paymentMethod) {
                 $incomeWhere .= " AND p.payment_method = ?";
                 $incomeParams[] = $paymentMethod;
@@ -816,8 +825,53 @@ class ProjectController extends Controller
             return $dateCompare;
         });
 
-        // Calculate running balance chronologically (oldest to newest)
+        // Calculate opening balance if startDate is applied
         $runningBalance = 0;
+        if ($startDate) {
+            // Expenses before start date
+            $expSumWhere = "project_id = ? AND tenant_id = ? AND expense_date < ?";
+            $expSumParams = [$id, $tenantId, $startDate];
+            
+            if ($category) {
+                if (strtolower($category) === 'payment') {
+                    $expSumWhere .= " AND 1=0";
+                } else {
+                    $expSumWhere .= " AND category = ?";
+                    $expSumParams[] = $category;
+                }
+            }
+            if ($paymentMethod) {
+                $expSumWhere .= " AND payment_method = ?";
+                $expSumParams[] = $paymentMethod;
+            }
+            
+            $expSumResult = $this->db->fetch("SELECT SUM(amount) as total FROM expenses WHERE {$expSumWhere}", $expSumParams);
+            $expSum = (float)($expSumResult['total'] ?? 0);
+            
+            // Payments before start date
+            $incSumWhere = "i.project_id = ? AND i.tenant_id = ? AND p.payment_date < ? AND p.status = 'completed'";
+            $incSumParams = [$id, $tenantId, $startDate];
+            
+            if ($category) {
+                if (strtolower($category) !== 'payment') {
+                    $incSumWhere .= " AND 1=0";
+                }
+            }
+            if ($paymentMethod) {
+                $incSumWhere .= " AND p.payment_method = ?";
+                $incSumParams[] = $paymentMethod;
+            }
+            
+            $incSumResult = $this->db->fetch(
+                "SELECT SUM(p.amount) as total FROM payments p JOIN invoices i ON p.invoice_id = i.id WHERE {$incSumWhere}",
+                $incSumParams
+            );
+            $incSum = (float)($incSumResult['total'] ?? 0);
+            
+            $runningBalance = $incSum - $expSum;
+        }
+
+        // Calculate running balance chronologically (oldest to newest)
         foreach ($transactions as &$t) {
             $runningBalance += $t['amount_display'];
             $t['running_balance'] = round($runningBalance, 2);

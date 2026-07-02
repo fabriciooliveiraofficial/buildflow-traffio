@@ -1,4 +1,4 @@
-﻿let project = null;
+let project = null;
 let employees = [];
 
 // Get current user from localStorage for permission checks
@@ -845,6 +845,12 @@ async function loadLedger() {
         const response = await ERP.api.get('/projects/' + projectId + '/ledger?' + queryParams);
         if (response.success) {
             ledgerData = response.data;
+            
+            // Reset sorting state to default (date DESC) since backend returns it sorted this way
+            ledgerSortColumn = 'date';
+            ledgerSortDirection = 'desc';
+            updateSortIcons('date');
+            
             renderLedger(ledgerData);
         }
     } catch (error) {
@@ -871,8 +877,8 @@ function sortLedger(column) {
         ledgerSortDirection = column === 'date' ? 'desc' : 'asc';
     }
 
-    // Sort the transactions
-    const sorted = [...ledgerData.transactions].sort((a, b) => {
+    // Sort the transactions in-place
+    ledgerData.transactions.sort((a, b) => {
         let valA, valB;
 
         switch (column) {
@@ -912,8 +918,11 @@ function sortLedger(column) {
     // Update sort icons
     updateSortIcons(column);
 
-    // Render with sorted data (but recalculate running balance)
-    renderLedger({ transactions: sorted });
+    // Reset pagination to first page
+    ledgerCurrentPage = 1;
+
+    // Render with sorted data
+    renderLedger(ledgerData);
 }
 
 function updateSortIcons(activeColumn) {

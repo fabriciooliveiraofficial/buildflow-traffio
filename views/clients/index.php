@@ -289,6 +289,7 @@ ob_start();
 
     function renderClients(clients) {
         const tbody = document.querySelector('#clients-table tbody');
+        const basePath = window.location.pathname.replace(/\/$/, '');
 
         if (clients.length === 0) {
             tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted">No clients found</td></tr>';
@@ -298,7 +299,7 @@ ob_start();
         tbody.innerHTML = clients.map(c => `
         <tr>
             <td>
-                <a href="/clients/${c.id}" class="font-medium">${c.name}</a>
+                <a href="${basePath}/${c.id}" class="font-medium">${c.name}</a>
                 <div class="text-xs text-muted">${c.type || 'Company'}</div>
             </td>
             <td>${c.contact_person || '-'}</td>
@@ -309,7 +310,7 @@ ob_start();
             <td class="${c.outstanding > 0 ? 'text-warning' : ''}">${formatCurrency(c.outstanding || 0)}</td>
             <td>
                 <div class="flex gap-1">
-                    <button class="btn btn-icon btn-sm btn-secondary" onclick="window.location.href='/clients/${c.id}'" title="View">
+                    <button class="btn btn-icon btn-sm btn-secondary" onclick="window.location.href='${basePath}/${c.id}'" title="View">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
                         </svg>
