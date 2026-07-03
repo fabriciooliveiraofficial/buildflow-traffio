@@ -1,7 +1,7 @@
 <?php
 /**
  * Construction ERP - Entry Point for Hostinger
- * WORKING VERSION - All checks passed
+ * WORKING VERSION - Update alert test commit
  */
 
 // EMERGENCY DEBUG - Check PaymentController
