@@ -8,7 +8,7 @@ ob_start();
 <div class="flex justify-between items-center mb-6">
     <div>
         <h1 class="text-2xl font-bold">Clients</h1>
-        <p class="text-muted text-sm">Manage client profiles, records, and related projects</p>
+        <p class="text-muted text-sm">Manage client profiles, records, and related projects.</p>
     </div>
     <button class="btn btn-primary" onclick="Modal.open('client-modal')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
