@@ -12,6 +12,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
 
+      - name: Create Build Hash File
+        run: echo "${{ github.sha }}" > build-hash.txt
+
       - name: Deploy via SSH/Rsync
         uses: easingthemes/ssh-deploy@v5.0.3
         with:
