@@ -1329,50 +1329,41 @@ async function deleteTransaction(type, id, invoiceId) {
 }
 
 function exportLedger() {
-    if (!financialsData) {
+    const transactions = getProcessedTransactions();
+    if (transactions.length === 0) {
         ERP.toast.error('No data to export');
         return;
     }
 
-    // Fetch ledger data and convert to CSV
-    ERP.api.get('/projects/' + projectId + '/ledger?per_page=1000').then(function (response) {
-        if (response.success) {
-            const transactions = response.data.transactions || [];
-
-            let csv = 'Date,Type,Description,Category,Vendor,Amount,Balance\n';
-            transactions.forEach(function (t) {
-                csv += '"' + t.date + '","' + t.type + '","' + (t.description || '') + '","' + (t.category || '') + '","' + (t.vendor || '') + '",' + t.amount_display + ',' + t.running_balance + '\n';
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'project-' + projectId + '-ledger.csv';
-            a.click();
-            URL.revokeObjectURL(url);
-
-            ERP.toast.success('Ledger exported');
-        }
+    let csv = 'Date,Type,Description,Category,Vendor,Amount,Balance\n';
+    transactions.forEach(function (t) {
+        csv += '"' + t.date + '","' + t.type + '","' + (t.description || '') + '","' + (t.category || '') + '","' + (t.vendor || '') + '",' + t.amount_display + ',' + t.running_balance + '\n';
     });
+
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'project-' + projectId + '-ledger.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+
+    ERP.toast.success('Ledger exported');
 }
 
 function exportLedgerToPDF() {
-    if (!financialsData) {
+    const transactions = getProcessedTransactions();
+    if (transactions.length === 0) {
         ERP.toast.error('No data to export');
         return;
     }
 
     ERP.toast.info('Generating PDF report...');
 
-    // Fetch ledger data
-    ERP.api.get('/projects/' + projectId + '/ledger?per_page=1000').then(function (response) {
-        if (response.success) {
-            const transactions = response.data.transactions || [];
-            const projectName = document.getElementById('project-name')?.textContent || 'Project';
-            const projectCode = document.getElementById('project-code')?.textContent || '';
+    const projectName = document.getElementById('project-name')?.textContent || 'Project';
+    const projectCode = document.getElementById('project-code')?.textContent || '';
 
-            // Calculate totals
+    // Calculate totals
             let totalIncome = 0;
             let totalExpenses = 0;
             transactions.forEach(function (t) {
@@ -1472,11 +1463,6 @@ function exportLedgerToPDF() {
             printWindow.document.close();
 
             ERP.toast.success('PDF ready for download');
-        }
-    }).catch(function (error) {
-        console.error('Failed to generate PDF:', error);
-        ERP.toast.error('Failed to generate PDF report');
-    });
 }
 
 
