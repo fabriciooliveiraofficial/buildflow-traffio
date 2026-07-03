@@ -5,9 +5,9 @@
  * Version-controlled for easy updates.
  */
 
-const CACHE_VERSION = 'v1.1.5';
-const CACHE_NAME = 'buildflow-cache-v1.1.5';
-const VERSION = '1.1.5';
+const CACHE_VERSION = 'v1.1.6';
+const CACHE_NAME = 'buildflow-cache-v1.1.6';
+const VERSION = '1.1.6';
 const STATIC_CACHE = `buildflow-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `buildflow-dynamic-${CACHE_VERSION}`;
 const API_CACHE = `buildflow-api-${CACHE_VERSION}`;
@@ -118,10 +118,10 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // HTML pages: CACHE-FIRST for version isolation
-    // Users stay on cached version until they accept update
+    // HTML pages: NETWORK-FIRST to ensure users always get the latest updates
+    // on refresh or navigation, eliminating the need for hard refreshes.
     if (request.headers.get('accept')?.includes('text/html')) {
-        event.respondWith(cacheFirstWithFallback(request, DYNAMIC_CACHE));
+        event.respondWith(networkFirstWithOffline(request));
         return;
     }
 

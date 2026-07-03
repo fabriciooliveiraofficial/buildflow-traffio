@@ -13,7 +13,10 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Create Build Hash File
-        run: echo "${{ github.sha }}" > build-hash.txt
+        run: |
+          echo "${{ github.sha }}" > build-hash.txt
+          # Inject hash into Service Worker to force update and cache clear
+          sed -i "s/const CACHE_VERSION = '.*';/const CACHE_VERSION = 'v1.1.6-${{ github.sha }}';/" sw.js
 
       - name: Deploy via SSH/Rsync
         uses: easingthemes/ssh-deploy@v5.0.3
