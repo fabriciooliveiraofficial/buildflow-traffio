@@ -73,6 +73,41 @@ if (file_exists($envFile)) {
 // Define app constants
 define('APP_NAME', getenv('APP_NAME') ?: 'Construction ERP');
 define('APP_VERSION', '1.1.5');
+
+// Dynamic Git Build Hash detection for real-time update alerts & cache-busting
+$gitHash = 'no-git-hash';
+$gitHeadFile = __DIR__ . '/.git/HEAD';
+if (file_exists($gitHeadFile)) {
+    $headContent = trim(file_get_contents($gitHeadFile));
+    if (strpos($headContent, 'ref:') === 0) {
+        $refPath = trim(substr($headContent, 4));
+        $refFile = __DIR__ . '/.git/' . $refPath;
+        if (file_exists($refFile)) {
+            $gitHash = substr(trim(file_get_contents($refFile)), 0, 10);
+        } else {
+            // Packed refs support
+            $packedFile = __DIR__ . '/.git/packed-refs';
+            if (file_exists($packedFile)) {
+                $packed = file_get_contents($packedFile);
+                if (preg_match('/([a-f0-9]{40})\s+' . preg_quote($refPath, '/') . '/', $packed, $matches)) {
+                    $gitHash = substr($matches[1], 0, 10);
+                }
+            }
+        }
+    } else if (preg_match('/^[a-f0-9]{40}$/i', $headContent)) {
+        $gitHash = substr($headContent, 0, 10);
+    }
+}
+// Fallback if git is not available (e.g. production build zip)
+if ($gitHash === 'no-git-hash') {
+    $versionJsonFile = __DIR__ . '/version.json';
+    if (file_exists($versionJsonFile)) {
+        $gitHash = substr(md5_file($versionJsonFile), 0, 10);
+    } else {
+        $gitHash = substr(md5(APP_VERSION), 0, 10);
+    }
+}
+define('APP_BUILD_HASH', $gitHash);
 define('APP_ENV', getenv('APP_ENV') ?: 'production');
 define('APP_DEBUG', true); // TEMPORARILY FORCED TO TRUE FOR DEBUGGING
 define('APP_URL', getenv('APP_URL') ?: 'https://' . $_SERVER['HTTP_HOST']);

@@ -46,8 +46,12 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+    <script>
+        window.APP_BUILD_HASH = "<?= APP_BUILD_HASH ?>";
+    </script>
+
     <!-- Styles -->
-    <link rel="stylesheet" href="/assets/css/main.css?v=<?= time() ?>">
+    <link rel="stylesheet" href="/assets/css/main.css?v=<?= APP_BUILD_HASH ?>">
 
     <!-- Critical inline styles (cache-proof) -->
     <style>
@@ -548,9 +552,9 @@ $basePath = $tenantSlug ? "/t/{$tenantSlug}" : '';
 
     <!-- Scripts -->
     <!-- BUILD_VERSION: 1.1.5 -->
-    <script src="/assets/js/app_v114.js?v=<?= time() ?>"></script>
-    <script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
-    <script src="/assets/js/update-service.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/app_v114.js?v=<?= APP_BUILD_HASH ?>"></script>
+    <script src="/assets/js/notifications.js?v=<?= APP_BUILD_HASH ?>"></script>
+    <script src="/assets/js/update-service.js?v=<?= APP_BUILD_HASH ?>"></script>
     <script>
         (function () {
             // Elements

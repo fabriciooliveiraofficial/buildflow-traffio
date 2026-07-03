@@ -17,7 +17,10 @@ $devApiToken = $_SESSION['dev_api_token'] ?? null;
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $title ?? 'Developer Console' ?> | BuildFlow Support</title>
-    <link rel="stylesheet" href="/assets/css/main.css?v=<?= time() ?>">
+    <script>
+        window.APP_BUILD_HASH = "<?= APP_BUILD_HASH ?>";
+    </script>
+    <link rel="stylesheet" href="/assets/css/main.css?v=<?= APP_BUILD_HASH ?>">
     <style>
         :root {
             --dev-primary: #7c3aed;
@@ -250,7 +253,7 @@ $devApiToken = $_SESSION['dev_api_token'] ?? null;
             console.warn('[DEV] No API token found in session. You may need to re-login.');
         <?php endif; ?>
     </script>
-    <script src="/assets/js/app.js?v=<?= time() ?>"></script>
+    <script src="/assets/js/app.js?v=<?= APP_BUILD_HASH ?>"></script>
 </body>
 
 </html>

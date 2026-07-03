@@ -26,12 +26,14 @@ class VersionController extends Controller
                 if (file_exists($versionFile)) {
                     $data = json_decode(file_get_contents($versionFile), true);
                     $data['_source'] = 'version.json (no db record)';
+                    $data['buildHash'] = defined('APP_BUILD_HASH') ? APP_BUILD_HASH : 'unknown';
                     return $this->success($data);
                 }
 
                 return $this->success([
                     'version' => '1.0.0',
                     'build' => date('Ymd'),
+                    'buildHash' => defined('APP_BUILD_HASH') ? APP_BUILD_HASH : 'unknown',
                     'changelog' => [],
                     '_source' => 'default (no db, no file)'
                 ]);
@@ -52,6 +54,7 @@ class VersionController extends Controller
             return $this->success([
                 'version' => $version['version'],
                 'build' => $version['build'] ?? date('Ymd'),
+                'buildHash' => defined('APP_BUILD_HASH') ? APP_BUILD_HASH : 'unknown',
                 'name' => $version['name'] ?? 'BuildFlow ERP',
                 'releaseDate' => $version['published_at'] ? date('Y-m-d', strtotime($version['published_at'])) : null,
                 'forceUpdate' => (bool) $version['force_update'],
@@ -66,12 +69,14 @@ class VersionController extends Controller
             if (file_exists($versionFile)) {
                 $data = json_decode(file_get_contents($versionFile), true);
                 $data['_source'] = 'version.json (db error: ' . $e->getMessage() . ')';
+                $data['buildHash'] = defined('APP_BUILD_HASH') ? APP_BUILD_HASH : 'unknown';
                 return $this->success($data);
             }
 
             return $this->success([
                 'version' => '1.0.0',
                 'build' => date('Ymd'),
+                'buildHash' => defined('APP_BUILD_HASH') ? APP_BUILD_HASH : 'unknown',
                 '_source' => 'default (db error: ' . $e->getMessage() . ')'
             ]);
         }

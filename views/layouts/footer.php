@@ -6,8 +6,8 @@
 <div class="modal-backdrop"></div>
 
 <!-- Scripts -->
-<script src="/assets/js/app.js?v=<?= time() ?>"></script>
-<script src="/assets/js/notifications.js?v=<?= time() ?>"></script>
+<script src="/assets/js/app.js?v=<?= APP_BUILD_HASH ?>"></script>
+<script src="/assets/js/notifications.js?v=<?= APP_BUILD_HASH ?>"></script>
 <script>
     (function () {
         // Elements

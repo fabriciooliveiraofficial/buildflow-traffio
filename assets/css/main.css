@@ -2337,3 +2337,142 @@ a:hover {
 .network-status.online {
     background: #22c55e;
 }
+
+/* Update Service Custom Styles */
+.update-modal {
+    border: 1px solid var(--border-color);
+}
+
+.update-modal-header {
+    background: linear-gradient(135deg, var(--primary-500), #4f46e5);
+    color: white !important;
+    padding: var(--space-5) var(--space-6);
+}
+
+.update-modal-header .modal-title {
+    color: white !important;
+    font-weight: 700;
+    font-size: var(--text-lg);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.update-modal-body {
+    padding: var(--space-6) !important;
+}
+
+.update-modal-intro {
+    font-size: var(--text-md);
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: var(--space-5);
+}
+
+.update-changelog-container {
+    background: var(--bg-secondary);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-5);
+    border: 1px solid var(--border-color);
+    max-height: 250px;
+    overflow-y: auto;
+}
+
+.changelog-release-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.changelog-section {
+    margin-bottom: var(--space-4);
+}
+
+.changelog-section:last-child {
+    margin-bottom: 0;
+}
+
+.changelog-section-title {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2);
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+}
+
+.changelog-list {
+    list-style: disc;
+    padding-left: var(--space-5);
+    font-size: var(--text-sm);
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.changelog-list li {
+    margin-bottom: var(--space-1);
+}
+
+.update-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6) var(--space-6) !important;
+    border-top: none !important;
+}
+
+/* Loading Overlay for Updates */
+.update-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85); /* Premium dark overlay */
+    backdrop-filter: blur(4px);
+    z-index: 99999;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: all;
+}
+
+.update-loading-overlay.visible {
+    opacity: 1;
+}
+
+.update-loader {
+    width: 50px;
+    height: 50px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    border-top-color: var(--primary-500);
+    animation: update-spin 1s ease-in-out infinite;
+    margin-bottom: var(--space-4);
+}
+
+.update-loader-text {
+    font-size: var(--text-md);
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
+@keyframes update-spin {
+    to { transform: rotate(360deg); }
+}
+
+.update-badge {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--error-500);
+    border-radius: 50%;
+    border: 1px solid var(--bg-primary);
+}

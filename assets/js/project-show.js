@@ -1095,7 +1095,16 @@ function getProcessedTransactions() {
 
         if (valA < valB) return direction === 'asc' ? -1 : 1;
         if (valA > valB) return direction === 'asc' ? 1 : -1;
-        return 0;
+        
+        // Tiebreaker for same values: fallback to date, then id to maintain consistent chronological presentation
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        if (dateA < dateB) return direction === 'asc' ? -1 : 1;
+        if (dateA > dateB) return direction === 'asc' ? 1 : -1;
+        
+        return direction === 'asc'
+            ? (a.id || 0) - (b.id || 0)
+            : (b.id || 0) - (a.id || 0);
     });
 
     return list;

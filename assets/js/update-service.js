@@ -1,9 +1,7 @@
 /**
  * Update Service - User-Controlled Update System
  * 
- * Checks for new versions and displays non-intrusive update notifications.
- * Inspired by Slack, Figma, VS Code update patterns.
- * 
+ * Checks for new versions and displays update modal notifications.
  * Tenant-aware: Each tenant independently tracks their update state.
  */
 
@@ -22,8 +20,8 @@ class UpdateService {
         this.storageKey = `erp_update_dismissed_${this.tenantSlug}`;
         this.versionKey = `erp_app_version_${this.tenantSlug}`;
 
-        // Check interval: every 5 minutes
-        this.CHECK_INTERVAL = 5 * 60 * 1000;
+        // Check interval: every 2 minutes
+        this.CHECK_INTERVAL = 2 * 60 * 1000;
         // Remind after 4 hours if dismissed
         this.REMIND_DELAY = 4 * 60 * 60 * 1000;
     }
@@ -42,7 +40,7 @@ class UpdateService {
      * Initialize the update service
      */
     async init() {
-        // Load current version from storage or manifest
+        // Load current version from storage
         this.currentVersion = localStorage.getItem(this.versionKey);
         this.dismissedUntil = localStorage.getItem(this.storageKey);
 
@@ -86,18 +84,20 @@ class UpdateService {
 
             // Check if update is available
             if (this.isUpdateAvailable()) {
+                // If it is a forced update, show it regardless of dismissal
+                if (this.versionData.forceUpdate) {
+                    this.showForceUpdateModal();
+                    return;
+                }
+
                 // Check if user dismissed the notification
                 if (this.isDismissed()) {
                     console.log('[UpdateService] Update available but dismissed');
                     return;
                 }
 
-                // Check for forced updates
-                if (this.versionData.forceUpdate) {
-                    this.showForceUpdateModal();
-                } else {
-                    this.showUpdateToast();
-                }
+                // Show central update modal
+                this.showUpdateModal();
             }
         } catch (error) {
             console.error('[UpdateService] Error checking for updates:', error);
@@ -105,11 +105,28 @@ class UpdateService {
     }
 
     /**
-     * Compare versions to determine if update is available
+     * Compare versions to determine if update is available (by SemVer or Build Hash)
      */
     isUpdateAvailable() {
-        if (!this.currentVersion || !this.latestVersion) return false;
-        return this.compareVersions(this.latestVersion, this.currentVersion) > 0;
+        if (!this.versionData) return false;
+
+        // 1. Prioritize build hash mismatch (automatic git push detection)
+        const serverHash = this.versionData.buildHash;
+        const clientHash = window.APP_BUILD_HASH || 'unknown';
+
+        if (serverHash && clientHash && serverHash !== 'unknown' && clientHash !== 'unknown') {
+            if (serverHash !== clientHash) {
+                console.log('[UpdateService] Update detected via buildHash mismatch. Client:', clientHash, 'Server:', serverHash);
+                return true;
+            }
+        }
+
+        // 2. Fallback to semver version comparison
+        if (this.currentVersion && this.latestVersion) {
+            return this.compareVersions(this.latestVersion, this.currentVersion) > 0;
+        }
+
+        return false;
     }
 
     /**
@@ -139,152 +156,151 @@ class UpdateService {
     }
 
     /**
-     * Show the update toast notification
+     * Show central update modal
      */
-    showUpdateToast() {
-        // Remove existing toast if any
-        const existing = document.getElementById('update-toast');
+    showUpdateModal() {
+        // Remove existing modal if any
+        const existing = document.getElementById('update-check-modal');
         if (existing) existing.remove();
 
         const changelog = this.getLatestChangelog();
-        const featurePreview = changelog?.features?.[0] || 'New improvements available';
 
-        const toast = document.createElement('div');
-        toast.id = 'update-toast';
-        toast.className = 'update-toast';
-        toast.innerHTML = `
-            <div class="update-toast-header">
-                <div class="update-toast-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                        <polyline points="17 8 12 3 7 8"/>
-                        <line x1="12" y1="3" x2="12" y2="15"/>
-                    </svg>
+        const modalBackdrop = document.createElement('div');
+        modalBackdrop.id = 'update-check-modal';
+        modalBackdrop.className = 'modal-backdrop active';
+        modalBackdrop.innerHTML = `
+            <div class="modal active update-modal" style="max-width: 520px; border: 1px solid var(--border-color);">
+                <div class="modal-header update-modal-header" style="background: linear-gradient(135deg, var(--primary-500), #4f46e5); color: white; display: flex; align-items: center; justify-content: space-between; padding: var(--space-4) var(--space-5);">
+                    <h3 class="modal-title" style="color: white; margin: 0; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        🚀 Atualização Disponível
+                    </h3>
+                    <button class="modal-close" onclick="updateService.dismissModal()" style="color: rgba(255,255,255,0.8); background: none; border: none; cursor: pointer; display: flex; align-items: center; padding: 4px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
                 </div>
-                <div class="update-toast-title-wrap">
-                    <div class="update-toast-title">New version available</div>
-                    <span class="update-version-badge">v${this.latestVersion}</span>
+                <div class="modal-body update-modal-body" style="padding: var(--space-5);">
+                    <p class="update-modal-intro" style="margin-bottom: var(--space-4); color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                        Uma nova atualização do BuildFlow está disponível com novos recursos, correções de bugs e melhorias de performance.
+                    </p>
+                    
+                    ${changelog ? `
+                        <div class="update-changelog-container" style="background: var(--bg-secondary); border-radius: var(--radius-lg); padding: var(--space-4); border: 1px solid var(--border-color); max-height: 200px; overflow-y: auto; text-align: left;">
+                            <h4 class="changelog-release-title" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-primary); letter-spacing: 0.05em; margin-bottom: var(--space-3);">
+                                Versão v${this.latestVersion}
+                            </h4>
+                            ${this.renderChangelog(changelog)}
+                        </div>
+                    ` : `
+                        <div class="update-changelog-container" style="background: var(--bg-secondary); border-radius: var(--radius-lg); padding: var(--space-4); border: 1px solid var(--border-color); text-align: center;">
+                            <p style="font-size: 0.9rem; color: var(--text-muted); margin: 0;">Correções e otimizações gerais de sistema.</p>
+                        </div>
+                    `}
                 </div>
-                <button class="update-toast-close" onclick="updateService.dismissToast()">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                </button>
-            </div>
-            <div class="update-toast-message">${featurePreview}</div>
-            <div class="update-toast-actions">
-                <button class="btn btn-sm btn-secondary" onclick="updateService.remindLater()">
-                    Later
-                </button>
-                <button class="btn btn-sm btn-outline" onclick="updateService.showWhatsNew()">
-                    What's New
-                </button>
-                <button class="btn btn-sm btn-primary" onclick="updateService.applyUpdate()">
-                    Update Now
-                </button>
+                <div class="modal-footer update-modal-footer" style="padding: var(--space-4) var(--space-5); display: flex; justify-content: flex-end; gap: var(--space-3); border-top: 1px solid var(--border-color);">
+                    <button class="btn btn-secondary" onclick="updateService.remindLater()">
+                        Talvez mais tarde
+                    </button>
+                    <button class="btn btn-primary" onclick="updateService.applyUpdate()" style="background-color: var(--primary-500); border-color: var(--primary-500); color: white;">
+                        Atualizar
+                    </button>
+                </div>
             </div>
         `;
 
-        document.body.appendChild(toast);
-
-        // Animate in
-        requestAnimationFrame(() => {
-            toast.classList.add('visible');
-        });
-
+        document.body.appendChild(modalBackdrop);
+        
         // Show update badge in header
         this.showUpdateBadge();
     }
 
     /**
-     * Show force update modal (non-dismissable)
+     * Show force update modal (non-dismissable, no cancel button)
      */
     showForceUpdateModal() {
-        const existing = document.getElementById('force-update-modal');
-        if (existing) return;
-
-        const modal = document.createElement('div');
-        modal.id = 'force-update-modal';
-        modal.className = 'force-update-overlay';
-        modal.innerHTML = `
-            <div class="force-update-modal">
-                <div class="force-update-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="12" y1="8" x2="12" y2="12"/>
-                        <line x1="12" y1="16" x2="12.01" y2="16"/>
-                    </svg>
-                </div>
-                <h2>Critical Update Required</h2>
-                <p>${this.versionData.forceUpdateMessage || 'A critical update is required to continue using the application.'}</p>
-                <button class="btn btn-primary btn-lg" onclick="updateService.applyUpdate()">
-                    Update Now
-                </button>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-        requestAnimationFrame(() => modal.classList.add('visible'));
-    }
-
-    /**
-     * Show What's New modal
-     */
-    showWhatsNew() {
-        this.dismissToast();
-
-        const existing = document.getElementById('whats-new-modal');
+        // Remove existing modal if any
+        const existing = document.getElementById('update-check-modal');
         if (existing) existing.remove();
 
         const changelog = this.getLatestChangelog();
 
-        const modal = document.createElement('div');
-        modal.id = 'whats-new-modal';
-        modal.className = 'modal-backdrop active';
-        modal.innerHTML = `
-            <div class="modal active whats-new-modal">
-                <div class="modal-header" style="background: linear-gradient(135deg, var(--primary-500), var(--secondary-500)); color: white;">
-                    <h3 class="modal-title">
-                        ✨ What's New in v${this.latestVersion}
+        const modalBackdrop = document.createElement('div');
+        modalBackdrop.id = 'update-check-modal';
+        modalBackdrop.className = 'modal-backdrop active';
+        // Prevent dismissal on backdrop click
+        modalBackdrop.style.pointerEvents = 'all';
+        
+        modalBackdrop.innerHTML = `
+            <div class="modal active update-modal" style="max-width: 520px; border: 1px solid var(--border-color);">
+                <div class="modal-header update-modal-header" style="background: linear-gradient(135deg, var(--error-500), #dc2626); color: white; display: flex; align-items: center; padding: var(--space-4) var(--space-5);">
+                    <h3 class="modal-title" style="color: white; margin: 0; font-size: 1.15rem; font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                        ⚠️ Atualização Obrigatória
                     </h3>
-                    <button class="modal-close" onclick="updateService.closeWhatsNew()" style="color: white;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
-                    </button>
                 </div>
-                <div class="modal-body">
-                    ${this.renderChangelog(changelog)}
+                <div class="modal-body update-modal-body" style="padding: var(--space-5);">
+                    <p class="update-modal-intro" style="margin-bottom: var(--space-4); color: var(--text-secondary); line-height: 1.5; font-size: 0.95rem;">
+                        Uma nova versão crítica foi lançada. Você precisa atualizar o aplicativo para continuar utilizando a plataforma com segurança.
+                    </p>
+                    
+                    ${this.versionData.forceUpdateMessage ? `
+                        <div class="force-message-box" style="background: rgba(239, 68, 68, 0.05); border-left: 4px solid var(--error-500); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); margin-bottom: var(--space-4); font-size: 0.9rem; color: #b91c1c; line-height: 1.5;">
+                            ${this.versionData.forceUpdateMessage}
+                        </div>
+                    ` : ''}
+                    
+                    ${changelog ? `
+                        <div class="update-changelog-container" style="background: var(--bg-secondary); border-radius: var(--radius-lg); padding: var(--space-4); border: 1px solid var(--border-color); max-height: 160px; overflow-y: auto; text-align: left;">
+                            <h4 class="changelog-release-title" style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; color: var(--text-primary); letter-spacing: 0.05em; margin-bottom: var(--space-3);">
+                                Novidades da v${this.latestVersion}
+                            </h4>
+                            ${this.renderChangelog(changelog)}
+                        </div>
+                    ` : ''}
                 </div>
-                <div class="modal-footer">
-                    <button class="btn btn-secondary" onclick="updateService.closeWhatsNew()">
-                        Maybe Later
-                    </button>
-                    <button class="btn btn-primary" onclick="updateService.applyUpdate()">
-                        Update Now
+                <div class="modal-footer update-modal-footer" style="padding: var(--space-4) var(--space-5); display: flex; justify-content: stretch; border-top: 1px solid var(--border-color);">
+                    <button class="btn btn-primary" onclick="updateService.applyUpdate()" style="width: 100%; background-color: var(--error-500); border-color: var(--error-500); color: white;">
+                        Atualizar Agora
                     </button>
                 </div>
             </div>
         `;
 
-        document.body.appendChild(modal);
+        document.body.appendChild(modalBackdrop);
     }
 
     /**
-     * Render changelog content
+     * Show loading overlay while applying update
+     */
+    showLoadingOverlay() {
+        const overlay = document.createElement('div');
+        overlay.className = 'update-loading-overlay';
+        overlay.innerHTML = `
+            <div class="update-loader"></div>
+            <div class="update-loader-text">Atualizando plataforma, por favor aguarde...</div>
+        `;
+        document.body.appendChild(overlay);
+        
+        // Trigger reflow then add class for fade-in transition
+        overlay.offsetHeight;
+        overlay.classList.add('visible');
+    }
+
+    /**
+     * Render changelog lists
      */
     renderChangelog(changelog) {
-        if (!changelog) return '<p class="text-muted">No changelog available.</p>';
+        if (!changelog) return '<p class="text-muted" style="font-size: 0.9rem; margin: 0;">Nenhuma nota de versão disponível.</p>';
 
         let html = '';
 
         if (changelog.features?.length) {
             html += `
-                <div class="changelog-section">
-                    <h4 class="changelog-section-title">
-                        <span class="changelog-icon">🎨</span> New Features
-                    </h4>
-                    <ul class="changelog-list">
+                <div class="changelog-section" style="margin-bottom: var(--space-3);">
+                    <h5 class="changelog-section-title" style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; margin: 0 0 4px 0;">
+                        <span>🎨</span> Recursos
+                    </h5>
+                    <ul class="changelog-list" style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary);">
                         ${changelog.features.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                 </div>
@@ -293,11 +309,11 @@ class UpdateService {
 
         if (changelog.fixes?.length) {
             html += `
-                <div class="changelog-section">
-                    <h4 class="changelog-section-title">
-                        <span class="changelog-icon">🐛</span> Bug Fixes
-                    </h4>
-                    <ul class="changelog-list">
+                <div class="changelog-section" style="margin-bottom: var(--space-3);">
+                    <h5 class="changelog-section-title" style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; margin: 0 0 4px 0;">
+                        <span>🐛</span> Correções
+                    </h5>
+                    <ul class="changelog-list" style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary);">
                         ${changelog.fixes.map(f => `<li>${f}</li>`).join('')}
                     </ul>
                 </div>
@@ -307,17 +323,17 @@ class UpdateService {
         if (changelog.improvements?.length) {
             html += `
                 <div class="changelog-section">
-                    <h4 class="changelog-section-title">
-                        <span class="changelog-icon">⚡</span> Improvements
-                    </h4>
-                    <ul class="changelog-list">
+                    <h5 class="changelog-section-title" style="font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 6px; margin: 0 0 4px 0;">
+                        <span>⚡</span> Melhorias
+                    </h5>
+                    <ul class="changelog-list" style="margin: 0; padding-left: 18px; font-size: 0.85rem; color: var(--text-secondary);">
                         ${changelog.improvements.map(i => `<li>${i}</li>`).join('')}
                     </ul>
                 </div>
             `;
         }
 
-        return html || '<p class="text-muted">No changes documented for this version.</p>';
+        return html || '<p class="text-muted" style="font-size: 0.85rem; margin: 0;">Correções e otimizações gerais.</p>';
     }
 
     /**
@@ -329,101 +345,82 @@ class UpdateService {
     }
 
     /**
-     * Close What's New modal
+     * Dismiss the modal
      */
-    closeWhatsNew() {
-        const modal = document.getElementById('whats-new-modal');
+    dismissModal() {
+        const modal = document.getElementById('update-check-modal');
         if (modal) modal.remove();
     }
 
     /**
-     * Dismiss the toast for 4 hours
+     * Dismiss the update for 4 hours
      */
     remindLater() {
         const dismissUntil = Date.now() + this.REMIND_DELAY;
         localStorage.setItem(this.storageKey, dismissUntil.toString());
-        this.dismissToast();
+        this.dismissModal();
 
         if (typeof ERP !== 'undefined' && ERP.toast) {
-            ERP.toast.info('We\'ll remind you about this update later');
+            ERP.toast.info('Lembraremos você sobre esta atualização mais tarde');
         }
     }
 
     /**
-     * Dismiss the toast (temporary, until next page load)
-     */
-    dismissToast() {
-        const toast = document.getElementById('update-toast');
-        if (toast) {
-            toast.classList.remove('visible');
-            setTimeout(() => toast.remove(), 300);
-        }
-    }
-
-    /**
-     * Apply the update (clear cache and refresh)
+     * Apply the update (purge cache and reload)
      */
     async applyUpdate() {
         console.log('[UpdateService] applyUpdate called');
-        console.log('[UpdateService] Setting version to:', this.latestVersion);
+        this.dismissModal();
+        this.showLoadingOverlay();
 
-        // Store the new version FIRST before any async operations
+        // Save new version to local storage
         localStorage.setItem(this.versionKey, this.latestVersion);
-        // Clear dismissal
         localStorage.removeItem(this.storageKey);
-        // Store flag to show "Updated successfully" message
         localStorage.setItem('erp_just_updated', 'true');
 
-        // Verify localStorage was set
-        const storedVersion = localStorage.getItem(this.versionKey);
-        console.log('[UpdateService] Stored version verification:', storedVersion);
-
-        // Show loading state
-        if (typeof ERP !== 'undefined' && ERP.toast) {
-            ERP.toast.info('Updating... Please wait');
-        }
-
         try {
-            // Tell service worker to clear all caches
+            // 1. Clear Service Worker cache
             if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                console.log('[UpdateService] Clearing SW cache...');
+                console.log('[UpdateService] Clearing SW Cache...');
                 navigator.serviceWorker.controller.postMessage({ type: 'CLEAR_CACHE' });
                 await new Promise(resolve => setTimeout(resolve, 500));
             }
 
-            // Also clear from window side  
+            // 2. Clear Window Cache Storage
             if ('caches' in window) {
-                console.log('[UpdateService] Clearing window caches...');
+                console.log('[UpdateService] Clearing Caches keys...');
                 const cacheNames = await caches.keys();
                 await Promise.all(cacheNames.map(name => caches.delete(name)));
             }
 
-            // Unregister SW to force fresh load
+            // 3. Unregister all service workers
             if ('serviceWorker' in navigator) {
-                console.log('[UpdateService] Unregistering service workers...');
+                console.log('[UpdateService] Unregistering Service Workers...');
                 const registrations = await navigator.serviceWorker.getRegistrations();
-                for (let registration of registrations) {
-                    await registration.unregister();
+                for (let r of registrations) {
+                    await r.unregister();
                 }
             }
         } catch (error) {
-            console.error('[UpdateService] Error during cache clear:', error);
+            console.error('[UpdateService] Error clearing cache:', error);
         }
 
+        // 4. Force reload from server with timestamp query string to bypass server/intermediate caches
         console.log('[UpdateService] Reloading page...');
-        // Force reload from server (bypass cache)
-        window.location.reload(true);
+        const url = new URL(window.location.href);
+        url.searchParams.set('_update', Date.now().toString());
+        window.location.href = url.toString();
     }
 
     /**
-     * Show update badge in header
+     * Show update badge in header on Settings button
      */
     showUpdateBadge() {
         const settingsBtn = document.querySelector('.header-icon-btn[title="Settings"]');
         if (settingsBtn && !settingsBtn.querySelector('.update-badge')) {
             const badge = document.createElement('span');
             badge.className = 'update-badge';
-            badge.title = 'Update available';
+            badge.title = 'Atualização disponível';
             settingsBtn.style.position = 'relative';
             settingsBtn.appendChild(badge);
         }
@@ -436,37 +433,12 @@ class UpdateService {
         if (localStorage.getItem('erp_just_updated') === 'true') {
             localStorage.removeItem('erp_just_updated');
 
-            // Show success toast
             setTimeout(() => {
                 if (typeof ERP !== 'undefined' && ERP.toast) {
-                    ERP.toast.success(`Updated to v${this.currentVersion}`);
-                }
-
-                // Optionally show What's New for this version
-                const showChangelog = localStorage.getItem('erp_show_changelog_on_update') !== 'false';
-                if (showChangelog && this.versionData) {
-                    this.showWhatsNewAfterUpdate();
+                    ERP.toast.success(`Plataforma atualizada para v${this.currentVersion}!`);
                 }
             }, 500);
         }
-    }
-
-    /**
-     * Show What's New modal after update
-     */
-    showWhatsNewAfterUpdate() {
-        const changelog = this.versionData?.changelog?.find(c => c.version === this.currentVersion);
-        if (!changelog) return;
-
-        // Only show if there are meaningful changes
-        const hasContent = changelog.features?.length || changelog.fixes?.length || changelog.improvements?.length;
-        if (!hasContent) return;
-
-        // Small delay for better UX
-        setTimeout(() => {
-            this.latestVersion = this.currentVersion; // For the modal display
-            this.showWhatsNew();
-        }, 1000);
     }
 
     /**
