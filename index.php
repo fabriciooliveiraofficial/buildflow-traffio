@@ -43,6 +43,12 @@ if (isset($_GET['debug_payment']) && $_GET['debug_payment'] === 'check') {
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+// Disable browser and server-side caching (e.g. Hostinger LiteSpeed)
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Cache-Control: post-check=0, pre-check=0', false);
+header('Pragma: no-cache');
+header('X-LiteSpeed-Cache-Control: no-cache');
+
 // Define paths FIRST
 define('BASE_PATH', __DIR__);
 define('ROOT_PATH', __DIR__);
